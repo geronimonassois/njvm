@@ -1,3 +1,5 @@
+/* file contains constant strings */
+
 #define START       "Ninja Virtual Machine started"
 #define STOP        "Ninja Virtual Machine stopped"
 #define VERSION     "Ninja Virtual Machine version 0 (compiled " __DATE__ " " __TIME__ " )\n"

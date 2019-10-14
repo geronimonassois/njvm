@@ -1,3 +1,7 @@
+/* file contains assambler instructions
+ * defines opcode instruction value
+ */
+
 #define HALT  0
 #define PUSHC 1
 #define ADD   2

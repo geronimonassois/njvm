@@ -6,8 +6,14 @@
 #include "program1.h"
 #include "instructions.h"
 
+/* Njvm program stack */
 unsigned int stack[1000];
 
+
+/* catches argv parameters
+ * @param[] string Parameter
+ * if wrong param -> Error message to exit
+ */
 void catch_param(char param[]){
     if(EQSTRING(param, "--version")){
         printf(VERSION);
@@ -21,10 +27,20 @@ void catch_param(char param[]){
     }
 }
 
+/* Main Program flow function
+ * todo v1:
+ * call functionpointer over Opcode with imidiate value as param
+ * todo v2:
+ * get Prog mem from assambler dat and malloc memory (stack usw)
+ */
 void run(){
     print_instructions(PROGRAM_1_INSTRUCTION_COUNT, program_1_memory);
 }
 
+/* Prints assambler instructions
+ * @count number of assambler instructions
+ * @memory array of assambler instructions
+ */
 void print_instructions(unsigned int count, unsigned int memory[]){
     char buf[30];
     for(int i = 0; i < count; i++){
@@ -34,6 +50,7 @@ void print_instructions(unsigned int count, unsigned int memory[]){
     }
 }
 
+/* calls for argv check and program run function */
 int main(int argc, char *argv[]){
     for(int i=1; i < argc; i++){
         catch_param(argv[i]);
