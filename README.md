@@ -2,7 +2,7 @@
 
 ## Aufgaben
 
-- [ ] Aufgabe 0
+- [x] Aufgabe 0
 - [ ] Aufgabe 1
 - [ ] Aufgabe 2
 - [ ] Aufgabe 3
