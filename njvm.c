@@ -7,8 +7,24 @@
 #include "instructions.h"
 
 /* Njvm program stack */
-unsigned int stack[1000];
+unsigned int stack[10000];
 
+/*
+ *
+ */
+const char *instructions[11]={
+        "halt",
+        "pushc",
+        "add",
+        "sub",
+        "mul",
+        "div",
+        "mod",
+        "rdint",
+        "wrint",
+        "rdchr",
+        "wrchr"
+};
 
 /* catches argv parameters
  * @param[] string Parameter

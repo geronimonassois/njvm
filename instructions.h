@@ -14,16 +14,3 @@
 #define RDCHR 9
 #define WRCHR 10
 
-const char *instructions[11]={
-        "halt",
-        "pushc",
-        "add",
-        "sub",
-        "mul",
-        "div",
-        "mod",
-        "rdint",
-        "wrint",
-        "rdchr",
-        "wrchr"
-};
