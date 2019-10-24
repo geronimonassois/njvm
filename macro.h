@@ -7,4 +7,5 @@
 #define EQSTRING(param, testString) !strcmp(param, testString)
 #define IMMEDIATE(x) ((x) & 0x00FFFFFF)
 #define OPCODE(x) (((unsigned int) x) >> 24)
+#define SIGN_EXTEND(i) ((i) & 0x00800000 ? (i) | 0xFF000000 : (i))
 

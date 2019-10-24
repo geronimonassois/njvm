@@ -7,7 +7,11 @@
 #include "instructions.h"
 
 /* Njvm program stack */
-unsigned int stack[10000];
+unsigned int stack[STACK_SIZE];
+unsigned int stackpointer;
+
+/*Program Memory counter*/
+unsigned int program_counter;
 
 /*
  *
@@ -25,6 +29,132 @@ const char *instructions[11]={
         "rdchr",
         "wrchr"
 };
+
+void exception(char* message){
+    printf(message);
+    exit(1);
+}
+
+typedef void (*instructionPtr)(int);
+
+/*
+ * ASM Instructions
+ */
+void halt (int);
+void pushc (int);
+
+void add (int);
+void sub (int);
+void mul (int);
+void divi (int);
+void mod (int);
+
+void rdint (int);
+void wrint (int);
+void rdchr (int);
+void wrchr (int);
+
+int pop_Stack(){
+    if(stackpointer < 0){
+        exception("Stackunderflow Exception");
+    }
+    return stack[stackpointer--];
+}
+
+void push_Stack(int immediate){
+    if(stackpointer == STACK_SIZE-1){
+        exception("Stackoverflow Exception");
+    }
+    stack[stackpointer++] = immediate;
+}
+
+/*
+ * Instruction Pointer Array
+ */
+instructionPtr opcode_instruction_pointer[] = {
+    halt,
+    pushc,
+    add,
+    sub,
+    mul,
+    divi,
+    mod,
+    rdint,
+    wrint,
+    rdchr,
+    wrchr
+};
+
+void halt (int immediate){
+    exit(1);
+}
+
+void pushc (int immediate){
+    printf("Deine Mudda");
+    pop_Stack(immediate);
+    program_counter++;
+}
+
+void add (int immediate){
+    printf("Dein Fadda");
+    push_Stack(pop_Stack()+pop_Stack());
+    program_counter++;
+
+}
+
+void sub (int immediate){
+    int temp = pop_Stack();
+    push_Stack(pop_Stack()-temp);
+    program_counter++;
+}
+
+void mul (int immediate){
+    push_Stack(pop_Stack()*pop_Stack());
+    program_counter++;
+}
+
+void divi (int immediate){
+    int divident = pop_Stack();
+    int numerator = pop_Stack();
+    if (divident == 0 || numerator == 0){
+        exception("Divide by Zero Exception");
+    }
+    push_Stack(numerator / divident);
+    program_counter++;
+}
+
+void mod (int immediate){
+    int modulent = pop_Stack();
+    int numerator = pop_Stack();
+    pushc(numerator % modulent);
+    program_counter++;
+}
+
+void rdint (int immediate){
+    printf("Please enter a number");
+    int number;
+    scanf("%d", &number);
+    push_Stack(number);
+    program_counter++;
+}
+
+void wrint (int immediate){
+    printf("%d", pop_Stack());
+    program_counter++;
+}
+
+void rdchr (int immediate){
+    printf("Please enter a character");
+    char character;
+    scanf("%c", &character);
+    push_Stack(character);
+    program_counter++;
+}
+
+void wrchr (int immediate){
+    printf("%c", pop_Stack());
+    program_counter++;
+}
 
 /* catches argv parameters
  * @param[] string Parameter
@@ -46,11 +176,14 @@ void catch_param(char param[]){
 /* Main Program flow function
  * todo v1:
  * call functionpointer over Opcode with imidiate value as param
- * todo v2:
- * get Prog mem from assambler dat and malloc memory (stack usw)
  */
 void run(){
+    stackpointer = 0;
+    program_counter = 0;
     print_instructions(PROGRAM_1_INSTRUCTION_COUNT, program_1_memory);
+    while(program_counter <= PROGRAM_1_INSTRUCTION_COUNT){
+        opcode_instruction_pointer[OPCODE(program_1_memory[program_counter])](SIGN_EXTEND(IMMEDIATE(program_1_memory[program_counter])));
+    }
 }
 
 /* Prints assambler instructions
