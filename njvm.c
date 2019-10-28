@@ -59,13 +59,15 @@ int pop_Stack(){
     if(stackpointer < 0){
         exception("Stackunderflow Exception");
     }
-    return stack[stackpointer--];
+    printf("pops stack at: %d\n",stackpointer); //-!
+    return stack[--stackpointer];
 }
 
 void push_Stack(int immediate){
     if(stackpointer == STACK_SIZE-1){
         exception("Stackoverflow Exception");
     }
+    printf("pushes to Stack-Adress: %d\n", stackpointer); //-!
     stack[stackpointer++] = immediate;
 }
 
@@ -96,13 +98,16 @@ void pushc (int immediate){
 }
 
 void add (int immediate){
-    push_Stack(pop_Stack()+pop_Stack());
+    int num1 = pop_Stack();
+    int num2 = pop_Stack();
+    push_Stack(num1+num2);
     program_counter++;
 }
 
 void sub (int immediate){
-    int temp = pop_Stack();
-    push_Stack(pop_Stack()-temp);
+    int num1 = pop_Stack();
+    int num2 = pop_Stack();
+    push_Stack(num2-num1);
     program_counter++;
 }
 
@@ -129,7 +134,6 @@ void mod (int immediate){
 }
 
 void rdint (int immediate){
-    printf("Please enter a number");
     int number;
     scanf("%d", &number);
     push_Stack(number);
@@ -142,17 +146,29 @@ void wrint (int immediate){
 }
 
 void rdchr (int immediate){
-    printf("Please enter a character");
     char character;
     scanf("%c", &character);
     push_Stack(character);
     program_counter++;
 }
 
+
 void wrchr (int immediate){
     printf("%c", pop_Stack());
     program_counter++;
 }
+
+void load_program_to_memory(char* program_file_path){
+    FILE *fp;
+    fp = fopen(program_file_path, "r");
+    if(fp == NULL){
+        exception("Could not open file!");
+    }
+    fprintf(fp, " ");
+    fclose(fp);
+    printf("%s", program_file_path);
+}
+
 
 /* catches argv parameters
  * @param[] string Parameter
@@ -163,26 +179,23 @@ void catch_param(char param[]){
         printf(VERSION);
     }else if(EQSTRING(param, "--help")){
         printf(HELP);
-    }else if(EQSTRING(param, "--prog1")) { // todo NEIN
-        run();
     }else{
         printf("unknown command line argument '%s', try '%s --help'\n", param, __FILE__);
         exit(1);
     }
 }
 
-/* Main Program flow function
- * todo v1:
- * call functionpointer over Opcode with imidiate value as param
- */
-void run(){
+/* Main Program flow function */
+void run(char* program_file_path){
     stackpointer = 0;
     program_counter = 0;
-
-    print_assambler_instructions(PROGRAM_1_INSTRUCTION_COUNT, program_1_memory);
+    //print_assambler_instructions(PROGRAM_1_INSTRUCTION_COUNT, program_1_memory);
+    /*
     while(program_counter <= PROGRAM_1_INSTRUCTION_COUNT){
         opcode_instruction_pointer[OPCODE(program_1_memory[program_counter])](SIGN_EXTEND(IMMEDIATE(program_1_memory[program_counter])));
     }
+     */
+    load_program_to_memory(program_file_path);
 }
 
 /* Prints assambler instructions
@@ -200,11 +213,11 @@ void print_assambler_instructions(unsigned int count, unsigned int memory[]){
 
 /* calls for argv check and program run function */
 int main(int argc, char *argv[]){
-    for(int i=1; i < argc; i++){
+    for(int i=1; i < argc-1; i++){
         catch_param(argv[i]);
     }
     printf("%s\n", START);
-    run();
+    run(argv[argc-1]);
     printf("%s\n", STOP);
     return 0;
 }
