@@ -1,6 +1,6 @@
 #define PROGRAM_1_INSTRUCTION_COUNT 5
 
-unsigned int program_1_memory[100]={
+unsigned int program_1_memory[]={
         0x01000003,
         0x01000004,
         0x02000000,

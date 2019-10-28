@@ -7,6 +7,7 @@
 #include "instructions.h"
 
 /* Njvm program stack */
+#define STACK_SIZE 10000
 unsigned int stack[STACK_SIZE];
 unsigned int stackpointer;
 
@@ -90,16 +91,13 @@ void halt (int immediate){
 }
 
 void pushc (int immediate){
-    printf("Deine Mudda");
-    pop_Stack(immediate);
+    push_Stack(immediate);
     program_counter++;
 }
 
 void add (int immediate){
-    printf("Dein Fadda");
     push_Stack(pop_Stack()+pop_Stack());
     program_counter++;
-
 }
 
 void sub (int immediate){
@@ -165,7 +163,7 @@ void catch_param(char param[]){
         printf(VERSION);
     }else if(EQSTRING(param, "--help")){
         printf(HELP);
-    }else if(EQSTRING(param, "--prog1")) {
+    }else if(EQSTRING(param, "--prog1")) { // todo NEIN
         run();
     }else{
         printf("unknown command line argument '%s', try '%s --help'\n", param, __FILE__);
@@ -180,7 +178,8 @@ void catch_param(char param[]){
 void run(){
     stackpointer = 0;
     program_counter = 0;
-    print_instructions(PROGRAM_1_INSTRUCTION_COUNT, program_1_memory);
+
+    print_assambler_instructions(PROGRAM_1_INSTRUCTION_COUNT, program_1_memory);
     while(program_counter <= PROGRAM_1_INSTRUCTION_COUNT){
         opcode_instruction_pointer[OPCODE(program_1_memory[program_counter])](SIGN_EXTEND(IMMEDIATE(program_1_memory[program_counter])));
     }
@@ -190,7 +189,7 @@ void run(){
  * @count number of assambler instructions
  * @memory array of assambler instructions
  */
-void print_instructions(unsigned int count, unsigned int memory[]){
+void print_assambler_instructions(unsigned int count, unsigned int memory[]){
     char buf[30];
     for(int i = 0; i < count; i++){
         int temp = IMMEDIATE(memory[i]);
