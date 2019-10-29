@@ -85,7 +85,14 @@ instructionPtr opcode_instruction_pointer[] = {
     rdint,
     wrint,
     rdchr,
-    wrchr
+    wrchr,
+
+    pushg,
+    popg,
+    asf,
+    rsf,
+    pushl,
+    popl
 };
 
 void halt (int immediate){
@@ -156,6 +163,34 @@ void rdchr (int immediate){
 void wrchr (int immediate){
     printf("%c", pop_Stack());
     program_counter++;
+}
+
+/*
+ * TO-DO
+ * Funktionen implementieren
+ * */
+void pushg(){
+
+}
+
+void popg(){
+
+}
+
+void asf(){
+
+}
+
+void rsf(){
+
+}
+
+void pushl() {
+
+}
+
+void popl(){
+
 }
 
 void load_program_to_memory(char* program_file_path){
