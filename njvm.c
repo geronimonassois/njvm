@@ -1,15 +1,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "constants.h"
+#include "njvm.h"
 #include "macro.h"
-#include "program1.h"
+#include "constants.h"
 #include "instructions.h"
 
 /* Njvm program stack */
 #define STACK_SIZE 10000
-unsigned int stack[STACK_SIZE];
+int stack[STACK_SIZE];
+unsigned int *memory;
+int no_of_static_variables;
+int *static_variables;
 unsigned int stackpointer;
+int no_of_instructions;
 
 /*Program Memory counter*/
 unsigned int program_counter;
@@ -17,7 +21,7 @@ unsigned int program_counter;
 /*
  *
  */
-const char *instructions[11]={
+const char *instructions[17]={
         "halt",
         "pushc",
         "add",
@@ -28,14 +32,27 @@ const char *instructions[11]={
         "rdint",
         "wrint",
         "rdchr",
-        "wrchr"
+        "wrchr",
+        "pushg",
+        "popg",
+        "asf",
+        "rsf",
+        "pushl",
+        "popl"
 };
 
+
+/*
+ * exception handling
+ * */
 void exception(char* message){
     printf(message);
     exit(1);
 }
 
+/*
+ * Typedef for instruction pointer
+ * */
 typedef void (*instructionPtr)(int);
 
 /*
@@ -55,21 +72,13 @@ void wrint (int);
 void rdchr (int);
 void wrchr (int);
 
-int pop_Stack(){
-    if(stackpointer < 0){
-        exception("Stackunderflow Exception");
-    }
-    printf("pops stack at: %d\n",stackpointer); //-!
-    return stack[--stackpointer];
-}
+void pushg();
+void popg();
+void asf();
+void rsf();
+void pushl();
+void popl();
 
-void push_Stack(int immediate){
-    if(stackpointer == STACK_SIZE-1){
-        exception("Stackoverflow Exception");
-    }
-    printf("pushes to Stack-Adress: %d\n", stackpointer); //-!
-    stack[stackpointer++] = immediate;
-}
 
 /*
  * Instruction Pointer Array
@@ -167,8 +176,8 @@ void wrchr (int immediate){
 
 /*
  * TO-DO
- * Funktionen implementieren
- * */
+ * implement functions
+ */
 void pushg(){
 
 }
@@ -193,20 +202,75 @@ void popl(){
 
 }
 
+void check_file_format(FILE *fp){
+    char head[4];
+    if(fread(&head[0], sizeof(char), 4, fp) != 4){
+        exception("could not read number of requested bytes");
+    }
+    if(strncmp(head, "NJBF", 4) != 0){
+        exception("No valid ninja binary file");
+    }
+}
+
+void check_file_version_no(FILE *fp){
+    int version_no;
+    if(fread(&version_no, sizeof(int), 1, fp) != 1){
+        exception("could not read number of requested bytes");
+    }
+    if(version_no != VERSION_NO){
+        exception("The source file version number is incorrect!");
+    }
+}
+
+void allocate_memory_for_instructions(FILE *fp){
+    if(fread(&no_of_instructions, sizeof(int), 1, fp) != 1){
+        exception("could not read number of requested bytes");
+    }
+    memory = malloc(no_of_instructions * sizeof(unsigned int));
+    if(memory == NULL){
+        exception("memory allocation failed");
+    }
+}
+
+
+void allocate_memory_for_static_variables(FILE *fp){
+    if(fread(&no_of_static_variables, sizeof(int), 1, fp) != 1){
+        exception("could not read number of requested bytes");
+    }
+    static_variables = malloc(no_of_static_variables * sizeof(int));
+    if(static_variables == NULL){
+        exception("memory allocation failed");
+    }
+}
+
+void read_instructions_into_memory(FILE *fp){
+    if(fread(&memory, sizeof(int), no_of_instructions, fp) != no_of_instructions){
+        exception("could not read number of requested bytes");
+    }
+}
+
+
+/*
+ * loading binary into memory
+ * @program_file_path: path to binary
+ * */
 void load_program_to_memory(char* program_file_path){
     FILE *fp;
     fp = fopen(program_file_path, "r");
     if(fp == NULL){
         exception("Could not open file!");
     }
-    fprintf(fp, " ");
+    check_file_format(fp);
+    check_file_version_no(fp);
+    allocate_memory_for_instructions(fp);
+    allocate_memory_for_static_variables(fp);
+    read_instructions_into_memory(fp);
     fclose(fp);
-    printf("%s", program_file_path);
 }
 
 
 /* catches argv parameters
- * @param[] string Parameter
+ * @param[]: string Parameter
  * if wrong param -> Error message to exit
  */
 void catch_param(char param[]){
@@ -220,27 +284,30 @@ void catch_param(char param[]){
     }
 }
 
-/* Main Program flow function */
+/*
+ * Main Program flow function
+ * @program_file_path: path to binary
+ * */
 void run(char* program_file_path){
     stackpointer = 0;
     program_counter = 0;
-    //print_assambler_instructions(PROGRAM_1_INSTRUCTION_COUNT, program_1_memory);
     /*
     while(program_counter <= PROGRAM_1_INSTRUCTION_COUNT){
         opcode_instruction_pointer[OPCODE(program_1_memory[program_counter])](SIGN_EXTEND(IMMEDIATE(program_1_memory[program_counter])));
     }
      */
     load_program_to_memory(program_file_path);
+    print_assambler_instructions();
 }
 
 /* Prints assambler instructions
- * @count number of assambler instructions
- * @memory array of assambler instructions
+ * @count: number of assambler instructions
+ * @memory: array of assambler instructions
  */
-void print_assambler_instructions(unsigned int count, unsigned int memory[]){
+void print_assambler_instructions(void){
     char buf[30];
-    for(int i = 0; i < count; i++){
-        int temp = IMMEDIATE(memory[i]);
+    for(int i = 0; i < no_of_instructions; i++){
+        int temp = IMMEDIATE((memory[i]));
         sprintf(buf, "%i", temp);
         printf("%d\t%s\t%s\n", i, instructions[OPCODE(memory[i])], ((temp > 0) ? buf : ""));
     }
