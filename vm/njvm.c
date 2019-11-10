@@ -8,15 +8,19 @@
 
 /* Njvm program stack */
 #define STACK_SIZE 10000
+
 int stack[STACK_SIZE];
 int* global_variables;
 int* local_variables;
-unsigned int *memory;
+int* static_variables;
+
 int no_of_static_variables;
-int *static_variables;
+int no_of_instructions;
+
+unsigned int* memory;
 unsigned int sp;
 unsigned int fp;
-int no_of_instructions;
+
 
 /*Program Memory counter*/
 unsigned int program_counter;
