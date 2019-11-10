@@ -18,8 +18,8 @@ int no_of_static_variables;
 int no_of_instructions;
 
 unsigned int* memory;
-unsigned int sp;
-unsigned int fp;
+unsigned int stack_pointer;
+unsigned int frame_pointer;
 
 
 /*Program Memory counter*/
@@ -86,19 +86,19 @@ instructionPtr opcode_instruction_pointer[] = {
 };
 
 int pop_Stack(){
-    if(sp < 0){
+    if(stackpointer < 0){
         exception("Stackunderflow Exception");
     }
-    printf("pops stack at: %d\n",sp); //-!
-    return stack[--sp];
+    printf("pops stack at: %d\n",stackpointer); //-!
+    return stack[--stackpointer];
 }
 
 void push_Stack(int immediate){
-    if(sp == STACK_SIZE-1){
+    if(stackpointer == STACK_SIZE-1){
         exception("Stackoverflow Exception");
     }
-    printf("pushes to Stack-Adress: %d\n", sp); //-!
-    stack[sp++] = immediate;
+    printf("pushes to Stack-Adress: %d\n", stackpointer); //-!
+    stack[stackpointer++] = immediate;
 }
 
 void halt (int immediate){
@@ -242,6 +242,7 @@ void allocate_memory_for_static_variables(FILE *fp){
     }
 }
 
+
 void read_instructions_into_memory(FILE *fp){
     if(fread(&memory, sizeof(int), no_of_instructions, fp) != no_of_instructions){
         exception("could not read number of requested bytes");
@@ -289,7 +290,7 @@ void catch_param(char param[]){
  * @program_file_path: path to binary
  * */
 void run(char* program_file_path){
-    sp = 0;
+    stackpointer = 0;
     program_counter = 0;
     /*
     while(program_counter <= PROGRAM_1_INSTRUCTION_COUNT){
