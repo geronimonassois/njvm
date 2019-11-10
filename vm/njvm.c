@@ -9,10 +9,13 @@
 /* Njvm program stack */
 #define STACK_SIZE 10000
 int stack[STACK_SIZE];
+int* global_variables;
+int* local_variables;
 unsigned int *memory;
 int no_of_static_variables;
 int *static_variables;
-unsigned int stackpointer;
+unsigned int sp;
+unsigned int fp;
 int no_of_instructions;
 
 /*Program Memory counter*/
@@ -56,31 +59,6 @@ void exception(char* message){
 typedef void (*instructionPtr)(int);
 
 /*
- * ASM Instructions
- */
-void halt (int);
-void pushc (int);
-
-void add (int);
-void sub (int);
-void mul (int);
-void divi (int);
-void mod (int);
-
-void rdint (int);
-void wrint (int);
-void rdchr (int);
-void wrchr (int);
-
-void pushg();
-void popg();
-void asf();
-void rsf();
-void pushl();
-void popl();
-
-
-/*
  * Instruction Pointer Array
  */
 instructionPtr opcode_instruction_pointer[] = {
@@ -95,7 +73,6 @@ instructionPtr opcode_instruction_pointer[] = {
     wrint,
     rdchr,
     wrchr,
-
     pushg,
     popg,
     asf,
@@ -103,6 +80,22 @@ instructionPtr opcode_instruction_pointer[] = {
     pushl,
     popl
 };
+
+int pop_Stack(){
+    if(sp < 0){
+        exception("Stackunderflow Exception");
+    }
+    printf("pops stack at: %d\n",sp); //-!
+    return stack[--sp];
+}
+
+void push_Stack(int immediate){
+    if(sp == STACK_SIZE-1){
+        exception("Stackoverflow Exception");
+    }
+    printf("pushes to Stack-Adress: %d\n", sp); //-!
+    stack[sp++] = immediate;
+}
 
 void halt (int immediate){
     exit(1);
@@ -177,13 +170,22 @@ void wrchr (int immediate){
 /*
  * TO-DO
  * implement functions
+ * debug function pointer problem
  */
-void pushg(){
+void pushg(int immediate){
 
 }
 
-void popg(){
+int popg(void){
+    return 1;
+}
 
+void pushl(int immediate) {
+
+}
+
+int popl(void){
+    return 1;
 }
 
 void asf(){
@@ -194,13 +196,6 @@ void rsf(){
 
 }
 
-void pushl() {
-
-}
-
-void popl(){
-
-}
 
 void check_file_format(FILE *fp){
     char head[4];
@@ -253,6 +248,7 @@ void read_instructions_into_memory(FILE *fp){
 /*
  * loading binary into memory
  * @program_file_path: path to binary
+ * TO-DO: make single "check_file_header"-function!
  * */
 void load_program_to_memory(char* program_file_path){
     FILE *fp;
@@ -289,7 +285,7 @@ void catch_param(char param[]){
  * @program_file_path: path to binary
  * */
 void run(char* program_file_path){
-    stackpointer = 0;
+    sp = 0;
     program_counter = 0;
     /*
     while(program_counter <= PROGRAM_1_INSTRUCTION_COUNT){

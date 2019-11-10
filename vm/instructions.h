@@ -1,4 +1,5 @@
-/* file contains assambler instructions
+/*
+ * file contains assambler instructions
  * defines opcode instruction value
  */
 
@@ -19,6 +20,3 @@
 #define RSF   14
 #define PUSHL 15
 #define POPL  16
-
-
-
