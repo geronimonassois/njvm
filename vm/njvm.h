@@ -12,10 +12,6 @@ int pop_Stack(void);
 void push_Stack(int);
 void halt (int);
 void pushc (int);
-int pop_Stack(void);
-void push_Stack(int);
-void halt (int);
-void pushc (int);
 void add (int);
 void sub (int);
 void mul (int);
@@ -26,11 +22,11 @@ void wrint (int);
 void rdchr (int);
 void wrchr (int);
 void pushg(int);
-int popg(void);
-void asf(void);
-void rsf(void);
+int popg(int);
+void asf(int);
+void rsf(int);
 void pushl(int);
-int popl(void);
+int popl(int);
 
 /*
  * Functions
