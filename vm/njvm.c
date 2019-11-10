@@ -176,6 +176,8 @@ void wrchr (int immediate){
  * implement functions
  * debug function pointer problem
  */
+
+
 void pushg(int immediate){
 
 }
