@@ -193,7 +193,7 @@ int popl(int immediate){
 }
 
 void asf(int immediate){
-    push_Stack(fp); // -!
+    push_Stack(frame_pointer); // -!
     frame_pointer = stack_pointer;
     stack_pointer += immediate;
 }
