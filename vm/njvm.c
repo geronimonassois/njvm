@@ -271,7 +271,7 @@ void allocate_memory_for_static_variables(FILE *fp){
 
 
 void read_instructions_into_memory(FILE *fp){
-    if(fread(&memory, sizeof(int), no_of_instructions, fp) != no_of_instructions){
+    if(fread(memory, sizeof(int), no_of_instructions, fp) != no_of_instructions){
         exception("could not read number of requested bytes");
     }
 }
@@ -335,10 +335,9 @@ void run(char* program_file_path){
 void print_assambler_instructions(void){
     char buf[30];
     for(int i = 0; i < no_of_instructions; i++){
-        printf("%d\n", memory[i]);
-        int temp = IMMEDIATE(memory[i]);
-        sprintf(buf, "%i", temp);
-        printf("%d\t%s\t%s\n", i, instructions[OPCODE(memory[i])], ((temp > 0) ? buf : ""));
+        int temp = SIGN_EXTEND(IMMEDIATE(memory[i]));
+        sprintf(buf, "%d", temp);
+        printf("%d\t%s\t%s\n", i, instructions[OPCODE(memory[i])], ((temp > 0) ? buf : " "));
     }
 }
 
