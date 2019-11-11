@@ -3,8 +3,8 @@
 ## Aufgaben
 
 - [x] Aufgabe 0
-- [ ] Aufgabe 1
-- [ ] Aufgabe 2
+- [x] Aufgabe 1
+- [x] Aufgabe 2
 - [ ] Aufgabe 3
 - [ ] Aufgabe 4
 - [ ] Hausübung
