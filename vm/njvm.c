@@ -190,12 +190,14 @@ int wrchr (int immediate){
 
 
 int pushg(int immediate){
-
+    static_variables[immediate] = pop_Stack();
     return 0;
 }
 
 int popg(int immediate){
-    return 1;
+    int var = stack_pointer[immediate];
+    stack_pointer[immediate] = NULL;
+    return var;
 }
 
 int pushl(int immediate) {
