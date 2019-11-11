@@ -196,20 +196,22 @@ int pushg(int immediate){
 }
 
 int popg(int immediate){
-    int var = stack_pointer[immediate];
-    stack_pointer[immediate] = NULL;
+    int var = static_variables[immediate];
+    static_variables[immediate] = 0;
     push_Stack(var);
     return 0;
 }
 
 int pushl(int immediate) {
+    int var = stack[frame_pointer+immediate];
+    push_Stack(var);
     return 0;
 }
 
 int popl(int immediate){
     int var = pop_Stack();
-    stack[immediate] = var;
-    return 1;
+    stack[frame_pointer+immediate] = var;
+    return 0;
 }
 
 int asf(int immediate){
@@ -333,7 +335,8 @@ void run(char* program_file_path){
 void print_assambler_instructions(void){
     char buf[30];
     for(int i = 0; i < no_of_instructions; i++){
-        int temp = IMMEDIATE((memory[i]));
+        printf("%d\n", memory[i]);
+        int temp = IMMEDIATE(memory[i]);
         sprintf(buf, "%i", temp);
         printf("%d\t%s\t%s\n", i, instructions[OPCODE(memory[i])], ((temp > 0) ? buf : ""));
     }
