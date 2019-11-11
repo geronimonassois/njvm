@@ -209,10 +209,16 @@ int popl(int immediate){
 }
 
 int asf(int immediate){
+    push_Stack(frame_pointer); // -!
+    frame_pointer = stack_pointer;
+    stack_pointer += immediate;
+
     return 0;
 }
 
 int rsf(int immediate){
+    stack_pointer = frame_pointer;
+    frame_pointer = pop_Stack();
     return 0;
 }
 
