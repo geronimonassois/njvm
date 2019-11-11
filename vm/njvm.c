@@ -190,14 +190,16 @@ int wrchr (int immediate){
 
 
 int pushg(int immediate){
-    static_variables[immediate] = pop_Stack();
+    int var = pop_Stack();
+    static_variables[immediate] = var;
     return 0;
 }
 
 int popg(int immediate){
     int var = stack_pointer[immediate];
     stack_pointer[immediate] = NULL;
-    return var;
+    push_Stack(var);
+    return 0;
 }
 
 int pushl(int immediate) {
@@ -205,14 +207,15 @@ int pushl(int immediate) {
 }
 
 int popl(int immediate){
+    int var = pop_Stack();
+    stack[immediate] = var;
     return 1;
 }
 
 int asf(int immediate){
-    push_Stack(frame_pointer); // -!
+    push_Stack(frame_pointer);
     frame_pointer = stack_pointer;
     stack_pointer += immediate;
-
     return 0;
 }
 
