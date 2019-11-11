@@ -60,7 +60,7 @@ void exception(char* message){
 /*
  * Typedef for instruction pointer
  * */
-typedef void (*instructionPtr)(int);
+typedef int (*instructionPtr)(int);
 
 /*
  * Instruction Pointer Array
@@ -101,35 +101,40 @@ void push_Stack(int immediate){
     stack[stack_pointer++] = immediate;
 }
 
-void halt (int immediate){
+int halt (int immediate){
     exit(1);
+    return 0;
 }
 
-void pushc (int immediate){
+int pushc (int immediate){
     push_Stack(immediate);
     program_counter++;
+    return 0;
 }
 
-void add (int immediate){
+int add (int immediate){
     int num1 = pop_Stack();
     int num2 = pop_Stack();
     push_Stack(num1+num2);
     program_counter++;
+    return 0;
 }
 
-void sub (int immediate){
+int sub (int immediate){
     int num1 = pop_Stack();
     int num2 = pop_Stack();
     push_Stack(num2-num1);
     program_counter++;
+    return 0;
 }
 
-void mul (int immediate){
+int mul (int immediate){
     push_Stack(pop_Stack()*pop_Stack());
     program_counter++;
+    return 0;
 }
 
-void divi (int immediate){
+int divi (int immediate){
     int divident = pop_Stack();
     int numerator = pop_Stack();
     if (divident == 0 || numerator == 0){
@@ -137,38 +142,44 @@ void divi (int immediate){
     }
     push_Stack(numerator / divident);
     program_counter++;
+    return 0;
 }
 
-void mod (int immediate){
+int mod (int immediate){
     int modulent = pop_Stack();
     int numerator = pop_Stack();
     pushc(numerator % modulent);
     program_counter++;
+    return 0;
 }
 
-void rdint (int immediate){
+int rdint (int immediate){
     int number;
     scanf("%d", &number);
     push_Stack(number);
     program_counter++;
+    return 0;
 }
 
-void wrint (int immediate){
+int wrint (int immediate){
     printf("%d", pop_Stack());
     program_counter++;
+    return 0;
 }
 
-void rdchr (int immediate){
+int rdchr (int immediate){
     char character;
     scanf("%c", &character);
     push_Stack(character);
     program_counter++;
+    return 0;
 }
 
 
-void wrchr (int immediate){
+int wrchr (int immediate){
     printf("%c", pop_Stack());
     program_counter++;
+    return 0;
 }
 
 /*
@@ -178,28 +189,28 @@ void wrchr (int immediate){
  */
 
 
-void pushg(int immediate){
-
+int pushg(int immediate){
+    return 0;
 }
 
 int popg(int immediate){
     return 1;
 }
 
-void pushl(int immediate) {
-
+int pushl(int immediate) {
+    return 0;
 }
 
 int popl(int immediate){
     return 1;
 }
 
-void asf(int immediate){
-
+int asf(int immediate){
+    return 0;
 }
 
-void rsf(int immediate){
-
+int rsf(int immediate){
+    return 0;
 }
 
 

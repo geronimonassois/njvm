@@ -8,24 +8,23 @@
 /*
  * ASM Instruction Prototypes
  * */
-int pop_Stack(void);
-void push_Stack(int);
-void halt (int);
-void pushc (int);
-void add (int);
-void sub (int);
-void mul (int);
-void divi (int);
-void mod (int);
-void rdint (int);
-void wrint (int);
-void rdchr (int);
-void wrchr (int);
-void pushg(int);
+int halt (int);
+int pushc (int);
+int add (int);
+int sub (int);
+int mul (int);
+int divi (int);
+int mod (int);
+int rdint (int);
+int wrint (int);
+int rdchr (int);
+int wrchr (int);
+
+int pushg(int);
 int popg(int);
-void asf(int);
-void rsf(int);
-void pushl(int);
+int asf(int);
+int rsf(int);
+int pushl(int);
 int popl(int);
 
 /*
@@ -40,5 +39,7 @@ void load_program_to_memory(char*);
 void catch_param(char* );
 void run(char*);
 void print_assambler_instructions(void);
+int pop_Stack(void);
+void push_Stack(int);
 
 #endif //NJVM_NJVM_H
