@@ -13,6 +13,7 @@ int stack[STACK_SIZE];
 int* global_variables;
 int* local_variables;
 int* static_variables;
+// static_variables[1] == *(static_variables+1)
 
 int no_of_static_variables;
 int no_of_instructions;
@@ -185,11 +186,11 @@ int wrchr (int immediate){
 /*
  * TO-DO
  * implement functions
- * debug function pointer problem
  */
 
 
 int pushg(int immediate){
+
     return 0;
 }
 
