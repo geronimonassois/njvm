@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/constants.h
+
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/instructions.h
+
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/macro.h
+
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/njvm.c
+stdio.h
+-
+string.h
+-
+stdlib.h
+-
+njvm.h
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/njvm.h
+macro.h
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/macro.h
+constants.h
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/constants.h
+instructions.h
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/instructions.h
+
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/njvm.h
+
