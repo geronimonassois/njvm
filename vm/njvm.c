@@ -120,13 +120,12 @@ void push_Stack(int immediate){
     if(stack_pointer == STACK_SIZE-1){
         exception("Stackoverflow Exception");
     }
-    printf("pushes to Stack-Adress: %d\n", stack_pointer); //-!
     stack[stack_pointer++] = immediate;
 }
 
 int halt (int immediate){
+    printf("%s\n", STOP);
     exit(1);
-    return 0;
 }
 
 int pushc (int immediate){
@@ -205,20 +204,20 @@ int wrchr (int immediate){
     return 0;
 }
 
+/*
+ * TO-DO: immediates pruefen
+ * */
 int pushg(int immediate){
-    int var = pop_Stack();
-    static_variables[immediate] = var;
+    int var = static_variables[immediate];
+    push_Stack(var);
     program_counter++;
-
     return 0;
 }
 
 int popg(int immediate){
-    int var = static_variables[immediate];
-    static_variables[immediate] = 0;
-    push_Stack(var);
+    int var = pop_Stack();
+    static_variables[immediate] = var;
     program_counter++;
-
     return 0;
 }
 
@@ -233,7 +232,6 @@ int popl(int immediate){
     int var = pop_Stack();
     stack[frame_pointer+immediate] = var;
     program_counter++;
-
     return 0;
 }
 
@@ -242,7 +240,6 @@ int asf(int immediate){
     frame_pointer = stack_pointer;
     stack_pointer += immediate;
     program_counter++;
-
     return 0;
 }
 
@@ -282,7 +279,7 @@ int ne(int immediate){
 int lt(int immediate){
     int first_val = pop_Stack();
     int second_val = pop_Stack();
-    if(first_val < second_val){
+    if(first_val > second_val){
         program_counter++;
         push_Stack(1);
         return 1;
@@ -295,7 +292,7 @@ int lt(int immediate){
 int le(int immediate){
     int first_val = pop_Stack();
     int second_val = pop_Stack();
-    if(first_val <= second_val){
+    if(first_val >= second_val){
         program_counter++;
         push_Stack(1);
         return 1;
@@ -308,7 +305,7 @@ int le(int immediate){
 int gt(int immediate){
     int first_val = pop_Stack();
     int second_val = pop_Stack();
-    if(first_val > second_val){
+    if(first_val < second_val){
         program_counter++;
         push_Stack(1);
         return 1;
@@ -321,7 +318,7 @@ int gt(int immediate){
 int ge(int immediate){
     int first_val = pop_Stack();
     int second_val = pop_Stack();
-    if(first_val >= second_val){
+    if(first_val <= second_val){
         program_counter++;
         push_Stack(1);
         return 1;
@@ -452,6 +449,7 @@ void run(char* program_file_path){
     stack_pointer = 0;
     program_counter = 0;
     load_program_to_memory(program_file_path);
+    print_assambler_instructions();
     while(program_counter < no_of_instructions){
         opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
     }
@@ -478,6 +476,5 @@ int main(int argc, char *argv[]){
     }
     printf("%s\n", START);
     run(argv[argc-1]);
-    printf("%s\n", STOP);
     return 0;
 }
