@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "njvm.h"
 #include "macro.h"
 #include "constants.h"
@@ -13,7 +14,7 @@ int stack[STACK_SIZE];
 int* global_variables;
 int* local_variables;
 int* static_variables;
-// static_variables[1] == *(static_variables+1)
+extern int errno;
 
 int no_of_static_variables;
 int no_of_instructions;
@@ -29,7 +30,7 @@ unsigned int program_counter;
 /*
  *
  */
-const char *instructions[17]={
+const char *instructions[26]={
         "halt",
         "pushc",
         "add",
@@ -41,12 +42,23 @@ const char *instructions[17]={
         "wrint",
         "rdchr",
         "wrchr",
+
         "pushg",
         "popg",
         "asf",
         "rsf",
         "pushl",
-        "popl"
+        "popl",
+
+        "eq",
+        "ne",
+        "lt",
+        "le",
+        "gt",
+        "ge",
+        "jmp",
+        "brf",
+        "brt"
 };
 
 
@@ -54,7 +66,7 @@ const char *instructions[17]={
  * exception handling
  * */
 void exception(char* message){
-    printf(message);
+    fprintf(stderr, "%s:\t %s\n",message, strerror(errno));
     exit(1);
 }
 
@@ -78,19 +90,29 @@ instructionPtr opcode_instruction_pointer[] = {
     wrint,
     rdchr,
     wrchr,
+
     pushg,
     popg,
     asf,
     rsf,
     pushl,
-    popl
+    popl,
+
+    eq,
+    ne,
+    lt,
+    le,
+    gt,
+    ge,
+    jmp,
+    brf,
+    brt
 };
 
 int pop_Stack(){
-    if(stack_pointer < 0){
+    if(stack_pointer <= 0){
         exception("Stackunderflow Exception");
     }
-    printf("pops stack at: %d\n",stack_pointer); //-!
     return stack[--stack_pointer];
 }
 
@@ -183,15 +205,11 @@ int wrchr (int immediate){
     return 0;
 }
 
-/*
- * TO-DO
- * implement functions
- */
-
-
 int pushg(int immediate){
     int var = pop_Stack();
     static_variables[immediate] = var;
+    program_counter++;
+
     return 0;
 }
 
@@ -199,18 +217,23 @@ int popg(int immediate){
     int var = static_variables[immediate];
     static_variables[immediate] = 0;
     push_Stack(var);
+    program_counter++;
+
     return 0;
 }
 
 int pushl(int immediate) {
     int var = stack[frame_pointer+immediate];
     push_Stack(var);
+    program_counter++;
     return 0;
 }
 
 int popl(int immediate){
     int var = pop_Stack();
     stack[frame_pointer+immediate] = var;
+    program_counter++;
+
     return 0;
 }
 
@@ -218,12 +241,121 @@ int asf(int immediate){
     push_Stack(frame_pointer);
     frame_pointer = stack_pointer;
     stack_pointer += immediate;
+    program_counter++;
+
     return 0;
 }
 
 int rsf(int immediate){
     stack_pointer = frame_pointer;
     frame_pointer = pop_Stack();
+    program_counter++;
+    return 0;
+}
+
+int eq(int immediate){
+    int first_val = pop_Stack();
+    int second_val = pop_Stack();
+    if(first_val == second_val){
+        program_counter++;
+        push_Stack(1);
+        return 1;
+    }
+    program_counter++;
+    push_Stack(0);
+    return 0;
+}
+
+int ne(int immediate){
+    int first_val = pop_Stack();
+    int second_val = pop_Stack();
+    if(first_val != second_val){
+        program_counter++;
+        push_Stack(1);
+        return 1;
+    }
+    program_counter++;
+    push_Stack(0);
+    return 0;
+}
+
+int lt(int immediate){
+    int first_val = pop_Stack();
+    int second_val = pop_Stack();
+    if(first_val < second_val){
+        program_counter++;
+        push_Stack(1);
+        return 1;
+    }
+    program_counter++;
+    push_Stack(0);
+    return 0;
+}
+
+int le(int immediate){
+    int first_val = pop_Stack();
+    int second_val = pop_Stack();
+    if(first_val <= second_val){
+        program_counter++;
+        push_Stack(1);
+        return 1;
+    }
+    program_counter++;
+    push_Stack(0);
+    return 0;
+}
+
+int gt(int immediate){
+    int first_val = pop_Stack();
+    int second_val = pop_Stack();
+    if(first_val > second_val){
+        program_counter++;
+        push_Stack(1);
+        return 1;
+    }
+    program_counter++;
+    push_Stack(0);
+    return 0;
+}
+
+int ge(int immediate){
+    int first_val = pop_Stack();
+    int second_val = pop_Stack();
+    if(first_val >= second_val){
+        program_counter++;
+        push_Stack(1);
+        return 1;
+    }
+    program_counter++;
+    push_Stack(0);
+    return 0;
+}
+
+int jmp(int immediate){
+    if(immediate < 0 || immediate > no_of_instructions){
+        exception("Jump address is invalid");
+    }
+    program_counter = immediate;
+    return 0;
+}
+
+int brf(int immediate){
+    int eval = pop_Stack();
+    if(eval == 0){
+        jmp(immediate);
+        return 0;
+    }
+    program_counter++;
+    return 0;
+}
+
+int brt(int immediate){
+    int eval = pop_Stack();
+    if(eval == 1){
+        jmp(immediate);
+        return 0;
+    }
+    program_counter++;
     return 0;
 }
 
@@ -286,7 +418,7 @@ void load_program_to_memory(char* program_file_path){
     FILE *fp;
     fp = fopen(program_file_path, "r");
     if(fp == NULL){
-        exception("Could not open file!");
+        exception("Error opening file");
     }
     check_file_format(fp);
     check_file_version_no(fp);
@@ -319,13 +451,11 @@ void catch_param(char param[]){
 void run(char* program_file_path){
     stack_pointer = 0;
     program_counter = 0;
-    /*
-    while(program_counter <= PROGRAM_1_INSTRUCTION_COUNT){
-        opcode_instruction_pointer[OPCODE(program_1_memory[program_counter])](SIGN_EXTEND(IMMEDIATE(program_1_memory[program_counter])));
-    }
-     */
     load_program_to_memory(program_file_path);
-    print_assambler_instructions();
+    while(program_counter < no_of_instructions){
+        opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
+    }
+    //print_assambler_instructions();
 }
 
 /* Prints assambler instructions

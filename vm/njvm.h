@@ -27,6 +27,16 @@ int rsf(int);
 int pushl(int);
 int popl(int);
 
+int eq(int);
+int ne(int);
+int lt(int);
+int le(int);
+int gt(int);
+int ge(int);
+int jmp(int);
+int brf(int);
+int brt(int);
+
 /*
  * Functions
  * */
