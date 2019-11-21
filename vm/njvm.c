@@ -23,6 +23,7 @@ unsigned int* memory;
 unsigned int stack_pointer;
 unsigned int frame_pointer;
 
+unsigned int debug_flag = 0;
 
 /*Program Memory counter*/
 unsigned int program_counter;
@@ -63,14 +64,6 @@ const char *instructions[26]={
 
 
 /*
- * exception handling
- * */
-void exception(char* message){
-    fprintf(stderr, "%s:\t %s\n",message, strerror(errno));
-    exit(1);
-}
-
-/*
  * Typedef for instruction pointer
  * */
 typedef int (*instructionPtr)(int);
@@ -79,35 +72,112 @@ typedef int (*instructionPtr)(int);
  * Instruction Pointer Array
  */
 instructionPtr opcode_instruction_pointer[] = {
-    halt,
-    pushc,
-    add,
-    sub,
-    mul,
-    divi,
-    mod,
-    rdint,
-    wrint,
-    rdchr,
-    wrchr,
+        halt,
+        pushc,
+        add,
+        sub,
+        mul,
+        divi,
+        mod,
+        rdint,
+        wrint,
+        rdchr,
+        wrchr,
 
-    pushg,
-    popg,
-    asf,
-    rsf,
-    pushl,
-    popl,
+        pushg,
+        popg,
+        asf,
+        rsf,
+        pushl,
+        popl,
 
-    eq,
-    ne,
-    lt,
-    le,
-    gt,
-    ge,
-    jmp,
-    brf,
-    brt
+        eq,
+        ne,
+        lt,
+        le,
+        gt,
+        ge,
+        jmp,
+        brf,
+        brt
 };
+
+
+/* calls for argv check and program run function */
+int main(int argc, char *argv[]){
+    for(int i=1; i < argc; i++){
+        catch_param(argv[i]);
+    }
+    return 0;
+}
+
+
+/* catches argv parameters
+ * @param[]: string Parameter
+ * if wrong param -> Error message to exit
+ */
+void catch_param(char param[]){
+    if(EQSTRING(param, "--version")){
+        printf(VERSION);
+    }else if(EQSTRING(param, "--help")) {
+        printf(HELP);
+    }else if(EQSTRING(param, "--debug")) {
+        debug_flag = 1;
+    }else if(param[0] == '-' && param[1] == '-'){
+        printf("unknown command line argument '%s', try '%s --help'\n", param, __FILE__);
+        exit(1);
+    }else{
+        if(debug_flag == 1){
+            debug(param);
+        }else{
+            run(param);
+        }
+    }
+}
+
+
+/*
+ * Main Program flow function
+ * @program_file_path: path to binary
+ * */
+void run(char* program_file_path){
+    printf("%s\n", START);
+    stack_pointer = 0;
+    program_counter = 0;
+    load_program_to_memory(program_file_path);
+    while(program_counter < no_of_instructions){
+        opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
+    }
+}
+
+
+/*
+ * Debug function
+ * @program_file_path: path to binary
+ * */
+void debug(char* program_file_path){
+    printf(ANSI_COLOR_MAGENTA "\nDEBUG MODE\n\n" ANSI_COLOR_RESET);
+    stack_pointer = 0;
+    program_counter = 0;
+    load_program_to_memory(program_file_path);
+    printf(ANSI_COLOR_RED);
+    print_assambler_instructions();
+    /*
+    while(program_counter < no_of_instructions){
+        opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
+    }
+     */
+}
+
+
+/*
+ * exception handling
+ * */
+void exception(char* message){
+    fprintf(stderr, "%s:\t %s\n",message, strerror(errno));
+    exit(1);
+}
+
 
 int pop_Stack(){
     if(stack_pointer <= 0){
@@ -426,36 +496,6 @@ void load_program_to_memory(char* program_file_path){
 }
 
 
-/* catches argv parameters
- * @param[]: string Parameter
- * if wrong param -> Error message to exit
- */
-void catch_param(char param[]){
-    if(EQSTRING(param, "--version")){
-        printf(VERSION);
-    }else if(EQSTRING(param, "--help")){
-        printf(HELP);
-    }else{
-        printf("unknown command line argument '%s', try '%s --help'\n", param, __FILE__);
-        exit(1);
-    }
-}
-
-/*
- * Main Program flow function
- * @program_file_path: path to binary
- * */
-void run(char* program_file_path){
-    stack_pointer = 0;
-    program_counter = 0;
-    load_program_to_memory(program_file_path);
-    print_assambler_instructions();
-    while(program_counter < no_of_instructions){
-        opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
-    }
-    //print_assambler_instructions();
-}
-
 /* Prints assambler instructions
  * @count: number of assambler instructions
  * @memory: array of assambler instructions
@@ -469,12 +509,4 @@ void print_assambler_instructions(void){
     }
 }
 
-/* calls for argv check and program run function */
-int main(int argc, char *argv[]){
-    for(int i=1; i < argc-1; i++){
-        catch_param(argv[i]);
-    }
-    printf("%s\n", START);
-    run(argv[argc-1]);
-    return 0;
-}
+

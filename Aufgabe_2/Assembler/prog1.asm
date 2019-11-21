@@ -26,6 +26,7 @@
 	pushc	-33
 	add
 	wrint
-	pushc
+	pushc	'\n'
 	wrchr
 	halt
+
