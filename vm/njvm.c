@@ -9,11 +9,11 @@
 
 /* Njvm program stack */
 #define STACK_SIZE 10000
+#define RETURN_STACK_SIZE 10000
 
-int stack[STACK_SIZE];
-int* global_variables;
-int* local_variables;
-int* static_variables;
+static int stack[STACK_SIZE];
+static int* static_variables;
+static int return_stack[RETURN_STACK_SIZE];
 extern int errno;
 
 int no_of_static_variables;
@@ -21,6 +21,7 @@ int no_of_instructions;
 
 unsigned int* memory;
 unsigned int stack_pointer;
+unsigned int return_stack_pointer;
 unsigned int frame_pointer;
 
 unsigned int debug_flag = 0;
@@ -31,7 +32,7 @@ unsigned int program_counter;
 /*
  *
  */
-const char *instructions[26]={
+const char *instructions[32]={
         "halt",
         "pushc",
         "add",
@@ -59,7 +60,14 @@ const char *instructions[26]={
         "ge",
         "jmp",
         "brf",
-        "brt"
+        "brt",
+
+        "call",
+        "ret",
+        "drop",
+        "pushr",
+        "popr",
+        "du"
 };
 
 
@@ -72,6 +80,7 @@ typedef int (*instructionPtr)(int);
  * Instruction Pointer Array
  */
 instructionPtr opcode_instruction_pointer[] = {
+        // Aufgabe 1
         halt,
         pushc,
         add,
@@ -84,6 +93,7 @@ instructionPtr opcode_instruction_pointer[] = {
         rdchr,
         wrchr,
 
+        // Aufgabe 2
         pushg,
         popg,
         asf,
@@ -91,6 +101,7 @@ instructionPtr opcode_instruction_pointer[] = {
         pushl,
         popl,
 
+        // Aufgabe 3
         eq,
         ne,
         lt,
@@ -99,7 +110,15 @@ instructionPtr opcode_instruction_pointer[] = {
         ge,
         jmp,
         brf,
-        brt
+        brt,
+
+        // Aufgabe 4
+        call,
+        ret,
+        drop,
+        pushr,
+        popr,
+        dup
 };
 
 
@@ -156,41 +175,59 @@ void run(char* program_file_path){
  * @program_file_path: path to binary
  * */
 void debug(char* program_file_path){
-    printf(ANSI_COLOR_MAGENTA "\nDEBUG MODE\n\n" ANSI_COLOR_RESET);
+    printf(ANSI_COLOR_GREEN "\nDEBUG MODE\n\n" ANSI_COLOR_RESET);
     stack_pointer = 0;
     program_counter = 0;
     load_program_to_memory(program_file_path);
-    printf(ANSI_COLOR_RED);
-    print_assambler_instructions();
-    /*
+    printf(ANSI_COLOR_BLUE "Program loaded into memory!" ANSI_COLOR_RESET);
+    printf(ANSI_COLOR_RED "\n\nTo start program execution press Return!"ANSI_COLOR_RESET);
     while(program_counter < no_of_instructions){
-        opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
+        if(fgetc(stdin) == '\n'){
+            opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
+            system("clear");
+            print_assambler_instructions_debug(program_counter, program_counter+1);
+        }
     }
-     */
 }
 
 
 /*
  * exception handling
  * */
-void exception(char* message){
-    fprintf(stderr, "%s:\t %s\n",message, strerror(errno));
+void exception(char* message, char* func, int line){
+    printf( ANSI_COLOR_RED "%s: \n" ANSI_COLOR_RESET, message);
+    printf(ANSI_COLOR_RED "FUNCTION: \t%s\n" ANSI_COLOR_RESET, func);
+    printf(ANSI_COLOR_RED "LINE: \t\t%d\n" ANSI_COLOR_RESET, line);
     exit(1);
 }
 
 
 int pop_Stack(){
     if(stack_pointer <= 0){
-        exception("Stackunderflow Exception");
+        exception("Stackunderflow Exception", __FUNCTION__, __LINE__);
     }
     return stack[--stack_pointer];
 }
 
 void push_Stack(int immediate){
     if(stack_pointer == STACK_SIZE-1){
-        exception("Stackoverflow Exception");
+        exception("Stackoverflow Exception bei Funktion:", __FUNCTION__, __LINE__);
     }
     stack[stack_pointer++] = immediate;
+}
+
+int pop_return_Stack(){
+    if(return_stack_pointer <= 0){
+        exception("Return-Stackunderflow Exception", __FUNCTION__, __LINE__);
+    }
+    return return_stack[--return_stack_pointer];
+}
+
+void push_return_Stack(int immediate){
+    if(return_stack_pointer == RETURN_STACK_SIZE-1){
+        exception("Return-Stackoverflow Exception", __FUNCTION__, __LINE__);
+    }
+    return_stack[return_stack_pointer++] = immediate;
 }
 
 int halt (int immediate){
@@ -230,7 +267,7 @@ int divi (int immediate){
     int divident = pop_Stack();
     int numerator = pop_Stack();
     if (divident == 0 || numerator == 0){
-        exception("Divide by Zero Exception");
+        exception("Divide by Zero Exception", __FUNCTION__, __LINE__);
     }
     push_Stack(numerator / divident);
     program_counter++;
@@ -292,8 +329,8 @@ int popg(int immediate){
 }
 
 int pushl(int immediate) {
-    int var = stack[frame_pointer+immediate];
-    push_Stack(var);
+    int val = stack[frame_pointer+immediate];
+    push_Stack(val);
     program_counter++;
     return 0;
 }
@@ -400,7 +437,7 @@ int ge(int immediate){
 
 int jmp(int immediate){
     if(immediate < 0 || immediate > no_of_instructions){
-        exception("Jump address is invalid");
+        exception("Jump address is invalid", __FUNCTION__, __LINE__);
     }
     program_counter = immediate;
     return 0;
@@ -426,52 +463,90 @@ int brt(int immediate){
     return 0;
 }
 
+int call(int immediate){
+    push_Stack(program_counter+1);
+    jmp(immediate);
+    return 0;
+}
+
+int ret(int immediate){
+    unsigned int return_adress = pop_Stack();
+    program_counter = return_adress;
+    return 0;
+}
+
+int drop(int immediate){
+    for(int i = 0; i < immediate; i++){
+        pop_Stack();
+    }
+    program_counter++;
+    return 0;
+}
+
+int pushr(int immediate){
+    int return_val = pop_return_Stack();
+    push_Stack(return_val);
+    program_counter++;
+    return 0;
+}
+
+int popr(int immediate){
+    push_return_Stack(pop_Stack());
+    program_counter++;
+    return 0;
+}
+
+int dup(int immediate){
+    push_Stack(stack[stack_pointer]);
+    program_counter++;
+    return 0;
+}
 
 void check_file_format(FILE *fp){
     char head[4];
     if(fread(&head[0], sizeof(char), 4, fp) != 4){
-        exception("could not read number of requested bytes");
+        exception("could not read number of requested bytes", __FUNCTION__, __LINE__);
     }
     if(strncmp(head, "NJBF", 4) != 0){
-        exception("No valid ninja binary file");
+        exception("No valid ninja binary file", __FUNCTION__, __LINE__);
     }
 }
 
 void check_file_version_no(FILE *fp){
     int version_no;
     if(fread(&version_no, sizeof(int), 1, fp) != 1){
-        exception("could not read number of requested bytes");
+        exception("could not read number of requested bytes", __FUNCTION__, __LINE__);
     }
     if(version_no != VERSION_NO){
-        exception("The source file version number is incorrect!");
+        exception("The source file version number is incorrect!", __FUNCTION__, __LINE__);
     }
 }
 
 void allocate_memory_for_instructions(FILE *fp){
     if(fread(&no_of_instructions, sizeof(int), 1, fp) != 1){
-        exception("could not read number of requested bytes");
+        exception("could not read number of requested bytes", __FUNCTION__, __LINE__);
     }
     memory = malloc(no_of_instructions * sizeof(unsigned int));
     if(memory == NULL){
-        exception("memory allocation failed");
+        exception("memory allocation failed", __FUNCTION__, __LINE__);
     }
 }
 
 
 void allocate_memory_for_static_variables(FILE *fp){
     if(fread(&no_of_static_variables, sizeof(int), 1, fp) != 1){
-        exception("could not read number of requested bytes");
+        exception("could not read number of requested bytes", __FUNCTION__, __LINE__);
     }
     static_variables = malloc(no_of_static_variables * sizeof(int));
     if(static_variables == NULL){
-        exception("memory allocation failed");
+        exception("memory allocation failed", __FUNCTION__, __LINE__);
     }
 }
 
 
 void read_instructions_into_memory(FILE *fp){
     if(fread(memory, sizeof(int), no_of_instructions, fp) != no_of_instructions){
-        exception("could not read number of requested bytes");
+        exception("could not read number of requested bytes", __FUNCTION__, __LINE__);
     }
 }
 
@@ -485,7 +560,7 @@ void load_program_to_memory(char* program_file_path){
     FILE *fp;
     fp = fopen(program_file_path, "r");
     if(fp == NULL){
-        exception("Error opening file");
+        exception("Error opening file", __FUNCTION__, __LINE__);
     }
     check_file_format(fp);
     check_file_version_no(fp);
@@ -505,8 +580,23 @@ void print_assambler_instructions(void){
     for(int i = 0; i < no_of_instructions; i++){
         int temp = SIGN_EXTEND(IMMEDIATE(memory[i]));
         sprintf(buf, "%d", temp);
-        printf("%d\t%s\t%s\n", i, instructions[OPCODE(memory[i])], ((temp > 0) ? buf : " "));
+        printf("%d\t%s\t%s\n", i, instructions[OPCODE(memory[i])], buf);
     }
 }
 
+
+void print_assambler_instructions_debug(int current_asm, int next_asm){
+    char buf[80];
+    for(int i = 0; i < no_of_instructions; i++){
+        int temp = SIGN_EXTEND(IMMEDIATE(memory[i]));
+        if(i == current_asm){
+            sprintf(buf, ANSI_COLOR_RED "%d [current instruction]" ANSI_COLOR_RESET, temp);
+        }else if(i == next_asm){
+            sprintf(buf, ANSI_COLOR_BLUE"%d [next instruction]" ANSI_COLOR_RESET, temp);
+        }else{
+            sprintf(buf, "%d", temp);
+        }
+        printf("%d\t%s\t%s\n", i, instructions[OPCODE(memory[i])], buf);
+    }
+}
 

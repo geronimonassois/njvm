@@ -8,6 +8,8 @@
 /*
  * ASM Instruction Prototypes
  * */
+
+// Aufgabe 1
 int halt (int);
 int pushc (int);
 int add (int);
@@ -20,6 +22,7 @@ int wrint (int);
 int rdchr (int);
 int wrchr (int);
 
+// Aufgabe 2
 int pushg(int);
 int popg(int);
 int asf(int);
@@ -27,6 +30,7 @@ int rsf(int);
 int pushl(int);
 int popl(int);
 
+// Aufgabe 3
 int eq(int);
 int ne(int);
 int lt(int);
@@ -36,6 +40,14 @@ int ge(int);
 int jmp(int);
 int brf(int);
 int brt(int);
+
+// Aufgabe 4
+int call(int);
+int ret(int);
+int drop(int);
+int pushr(int);
+int popr(int);
+int dup(int);
 
 /*
  * Functions
@@ -50,6 +62,7 @@ void catch_param(char* );
 void run(char*);
 void debug(char *);
 void print_assambler_instructions(void);
+void print_assambler_instructions_debug(int, int);
 int pop_Stack(void);
 void push_Stack(int);
 
