@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include "njvm.h"
 #include "macro.h"
 #include "constants.h"
 #include "instructions.h"
+#include "debugger.c"
+
 
 /* Njvm program stack */
 #define STACK_SIZE 10000
@@ -31,7 +32,7 @@ unsigned int program_counter;
 /*
  *
  */
-const char *instructions[32]={
+const char *instructions[]={
         "halt",
         "pushc",
         "add",
@@ -165,27 +166,6 @@ void run(char* program_file_path){
     load_program_to_memory(program_file_path);
     while(program_counter < no_of_instructions){
         opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
-    }
-}
-
-
-/*
- * Debug function
- * @program_file_path: path to binary
- * */
-void debug(char* program_file_path){
-    printf(ANSI_COLOR_GREEN "\nDEBUG MODE\n\n" ANSI_COLOR_RESET);
-    stack_pointer = 0;
-    program_counter = 0;
-    load_program_to_memory(program_file_path);
-    printf(ANSI_COLOR_BLUE "Program loaded into memory!" ANSI_COLOR_RESET);
-    printf(ANSI_COLOR_RED "\n\nTo start program execution press Return!"ANSI_COLOR_RESET);
-    while(program_counter < no_of_instructions){
-        if(fgetc(stdin) == '\n'){
-            opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
-            system("clear");
-            print_assambler_instructions_debug(program_counter, program_counter+1);
-        }
     }
 }
 

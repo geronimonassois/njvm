@@ -8,6 +8,8 @@
 
 /home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/constants.h
 
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/debugger.h
+
 /home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/instructions.h
 
 /home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/macro.h
@@ -19,8 +21,6 @@ string.h
 -
 stdlib.h
 -
-errno.h
--
 njvm.h
 /home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/njvm.h
 macro.h
@@ -29,6 +29,8 @@ constants.h
 /home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/constants.h
 instructions.h
 /home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/instructions.h
+debugger.h
+/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/debugger.h
 
 /home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/njvm.h
 
