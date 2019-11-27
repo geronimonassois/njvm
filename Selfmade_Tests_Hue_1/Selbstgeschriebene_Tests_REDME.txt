@@ -1,0 +1,14 @@
+Dieser Ordner enthält selbstgeschriebene Tests welche mit dem Assembler aus Aufgabe 4 Compiliert werden
+Es soll die Funktionalität aller Funktionen sicherstellen und Mögliche Fehler aufweisen.
+
+Die Folgenden Ausgaben wurden Über die Refferenzimplementierung generiert:
+
+
+Test_1:
+Ausgabe sollte ein Stack underflow sein.
+
+Test_2:
+Ausgabe sollte ein Stack Overflow sein.
+
+Test_3:
+Ausgabe sollte ein Global Stack underflow sein.
