@@ -5,9 +5,9 @@
 - [x] Aufgabe 0
 - [x] Aufgabe 1
 - [x] Aufgabe 2
-- [ ] Aufgabe 3
-- [ ] Aufgabe 4
-- [ ] Hausübung
+- [x] Aufgabe 3
+- [x] Aufgabe 4
+- [x] Hausübung
 - [ ] Aufgabe 5
 - [ ] Aufgabe 6
 - [ ] Aufgabe 7
@@ -16,9 +16,7 @@
 
 ## Allgemeine Informationen
 
-#### Debugspezifikationen:
+### Features dieser NJVM
 
-Die debug Spezifikation findet sich in der debug.txt
-
-## Features dieser NJVM
-
+Dieses Programm verfügt über einen ausführlichen Debugger mit consolengraphischem Overlay,
+Die Dokumentation dazu befindet sich in der debug.txt
