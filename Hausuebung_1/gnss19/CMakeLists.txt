@@ -1,3 +1,3 @@
 cmake_minimum_required(VERSION 3.13)
 project(njvm)
-add_executable(njvm njvm.c)
+add_executable(njvm njvm.cc)

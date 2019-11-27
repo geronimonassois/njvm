@@ -5,7 +5,7 @@
 #include "macro.h"
 #include "constants.h"
 #include "instructions.h"
-#include "debugger.c"
+
 
 
 /* Njvm program stack */
@@ -147,7 +147,7 @@ void catch_param(char param[]){
         exit(1);
     }else{
         if(debug_flag == 1){
-            debug(param);
+            //debug(param);
         }else{
             run(param);
         }

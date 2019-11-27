@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include "njvm.h"
 #include "macro.h"
 #include "constants.h"
 #include "instructions.h"
+
+
 
 /* Njvm program stack */
 #define STACK_SIZE 10000
@@ -13,7 +14,7 @@
 
 int stack[STACK_SIZE];
 int* static_variables;
-int return_stack[RETURN_STACK_SIZE];
+int return_value;
 
 int no_of_static_variables;
 int no_of_instructions;
@@ -31,7 +32,7 @@ unsigned int program_counter;
 /*
  *
  */
-const char *instructions[32]={
+const char *instructions[]={
         "halt",
         "pushc",
         "add",
@@ -146,7 +147,7 @@ void catch_param(char param[]){
         exit(1);
     }else{
         if(debug_flag == 1){
-            debug(param);
+            //debug(param);
         }else{
             run(param);
         }
@@ -170,27 +171,6 @@ void run(char* program_file_path){
 
 
 /*
- * Debug function
- * @program_file_path: path to binary
- * */
-void debug(char* program_file_path){
-    printf(ANSI_COLOR_GREEN "\nDEBUG MODE\n\n" ANSI_COLOR_RESET);
-    stack_pointer = 0;
-    program_counter = 0;
-    load_program_to_memory(program_file_path);
-    printf(ANSI_COLOR_BLUE "Program loaded into memory!" ANSI_COLOR_RESET);
-    printf(ANSI_COLOR_RED "\n\nTo start program execution press Return!"ANSI_COLOR_RESET);
-    while(program_counter < no_of_instructions){
-        if(fgetc(stdin) == '\n'){
-            opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
-            system("clear");
-            print_assambler_instructions_debug(program_counter, program_counter+1);
-        }
-    }
-}
-
-
-/*
  * exception handling
  * */
 void exception(char* message, const char *func, int line){
@@ -199,7 +179,6 @@ void exception(char* message, const char *func, int line){
     fprintf (stderr, ANSI_COLOR_RED "LINE: \t\t%d\n" ANSI_COLOR_RESET, line);
     exit(1);
 }
-
 
 int pop_Stack(){
     if(stack_pointer <= 0){
@@ -215,18 +194,36 @@ void push_Stack(int immediate){
     stack[stack_pointer++] = immediate;
 }
 
-int pop_return_Stack(){
-    if(return_stack_pointer <= 0){
-        exception("Return-Stackunderflow Exception", __func__, __LINE__);
+void pop_Global(int immediate){
+    if(immediate <= 0){
+        exception("Global Stackunderflow Exception", __func__, __LINE__);
     }
-    return return_stack[--return_stack_pointer];
+    int var = pop_Stack();
+    static_variables[immediate] = var;
 }
 
-void push_return_Stack(int immediate){
-    if(return_stack_pointer == RETURN_STACK_SIZE-1){
-        exception("Return-Stackoverflow Exception", __func__, __LINE__);
+void push_Global(int immediate){
+    if(immediate < no_of_static_variables){
+        exception("Global Stackoverflow Exception bei Funktion:", __func__, __LINE__);
     }
-    return_stack[return_stack_pointer++] = immediate;
+    int var = static_variables[immediate];
+    push_Stack(var);
+}
+
+void pop_local(int memory_Adress){
+    if(memory_Adress <= 0){
+        exception("Stackunderflow Exception", __func__, __LINE__);
+    }
+    int var = pop_Stack();
+    stack[memory_Adress] = var;
+}
+
+void push_local(int memory_Adress){
+    if(memory_Adress == STACK_SIZE-1){
+        exception("Stackoverflow Exception bei Funktion:", __func__, __LINE__);
+    }
+    int val = stack[memory_Adress];
+    push_Stack(val);
 }
 
 int halt (int immediate){
@@ -276,6 +273,9 @@ int divi (int immediate){
 int mod (int immediate){
     int modulent = pop_Stack();
     int numerator = pop_Stack();
+    if(modulent == 0){
+        exception("Modulo by Zero Exception", __func__, __LINE__);
+    }
     pushc(numerator % modulent);
     program_counter++;
     return 0;
@@ -310,38 +310,34 @@ int wrchr (int immediate){
     return 0;
 }
 
-/*
- * TO-DO: immediates pruefen
- * */
 int pushg(int immediate){
-    int var = static_variables[immediate];
-    push_Stack(var);
+    push_Global(immediate);
     program_counter++;
     return 0;
 }
 
 int popg(int immediate){
-    int var = pop_Stack();
-    static_variables[immediate] = var;
+    pop_Global(immediate);
     program_counter++;
     return 0;
 }
 
 int pushl(int immediate) {
-    int val = stack[frame_pointer+immediate];
-    push_Stack(val);
+    push_local(frame_pointer+immediate);
     program_counter++;
     return 0;
 }
 
 int popl(int immediate){
-    int var = pop_Stack();
-    stack[frame_pointer+immediate] = var;
+    pop_local(frame_pointer+immediate);
     program_counter++;
     return 0;
 }
 
 int asf(int immediate){
+    if((stack_pointer + immediate) > STACK_SIZE-1){
+        exception("Assamble Stackframe Stackoverflow Exception bei Funktion:", __func__, __LINE__);
+    }
     push_Stack(frame_pointer);
     frame_pointer = stack_pointer;
     stack_pointer += immediate;
@@ -483,14 +479,13 @@ int drop(int immediate){
 }
 
 int pushr(int immediate){
-    int return_val = pop_return_Stack();
-    push_Stack(return_val);
+    push_Stack(return_value);
     program_counter++;
     return 0;
 }
 
 int popr(int immediate){
-    push_return_Stack(pop_Stack());
+    return_value = pop_Stack();
     program_counter++;
     return 0;
 }
