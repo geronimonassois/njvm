@@ -1,3 +1,0 @@
-/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/cmake-build-debug/CMakeFiles/njvm.dir
-/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/cmake-build-debug/CMakeFiles/edit_cache.dir
