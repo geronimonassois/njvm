@@ -1,30 +1,4 @@
 /home/geronimonassois/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/193.5662.56/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm
--- The C compiler identification is GNU 9.2.0
--- The CXX compiler identification is GNU 9.2.0
--- Check for working C compiler: /usr/bin/cc
--- Check for working C compiler: /usr/bin/cc -- works
--- Detecting C compiler ABI info
--- Detecting C compiler ABI info - done
--- Detecting C compile features
--- Detecting C compile features - done
--- Check for working CXX compiler: /usr/bin/c++
--- Check for working CXX compiler: /usr/bin/c++ -- works
--- Detecting CXX compiler ABI info
--- Detecting CXX compiler ABI info - done
--- Detecting CXX compile features
--- Detecting CXX compile features - done
 -- Configuring done
-CMake Error at CMakeLists.txt:3 (add_executable):
-  Cannot find source file:
-
-    njvm.cc
-
-  Tried extensions .c .C .c++ .cc .cpp .cxx .cu .m .M .mm .h .hh .h++ .hm
-  .hpp .hxx .in .txx
-
-
-CMake Error at CMakeLists.txt:3 (add_executable):
-  No SOURCES given to target: njvm
-
-
-CMake Generate step failed.  Build files cannot be regenerated correctly.
+-- Generating done
+-- Build files have been written to: /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/cmake-build-debug

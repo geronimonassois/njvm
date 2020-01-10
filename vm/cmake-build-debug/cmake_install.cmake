@@ -1,4 +1,4 @@
-# Install script for directory: /home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm
+# Install script for directory: /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/geronimonassois/UniAktuell/Konzepte_systemnaher_Programmierung/njvm/vm/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
