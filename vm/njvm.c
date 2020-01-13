@@ -124,23 +124,7 @@ instructionPtr opcode_instruction_pointer[] = {
         dup
 };
 
-typedef enum { false, true } boolean;
 
-typedef struct{
-    unsigned int size;
-    unsigned char data[1];
-} *ObjectRef;
-
-ObjectRef = malloc(sizeof(unsigned int) +sizeof(int));
-
-
-
-typedef struct {
-    boolean isObjectReference;
-    union {
-
-    };
-};
 
 
 /* calls for argv check and program run function */
