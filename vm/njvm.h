@@ -60,8 +60,11 @@ void read_instructions_into_memory(FILE*);
 void load_program_to_memory(char*);
 void catch_param(char* );
 void run(char*);
+void debug(char*);
 void print_assambler_instructions(void);
 void print_assambler_instructions_debug(int, int);
+void print_menu(void);
+void print_memory(void);
 int pop_Stack(void);
 void push_Stack(int);
 

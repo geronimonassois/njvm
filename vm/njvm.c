@@ -1,6 +1,9 @@
+// Libs
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+// VM
 #include "njvm.h"
 #include "macro.h"
 #include "constants.h"
@@ -9,7 +12,7 @@
 
 
 /* Njvm program stack */
-#define STACK_SIZE 10000
+#define STACK_SIZE 100
 #define RETURN_STACK_SIZE 10000
 
 int stack[STACK_SIZE];
@@ -121,6 +124,24 @@ instructionPtr opcode_instruction_pointer[] = {
         dup
 };
 
+typedef enum { false, true } boolean;
+
+typedef struct{
+    unsigned int size;
+    unsigned char data[1];
+} *ObjectRef;
+
+ObjectRef = malloc(sizeof(unsigned int) +sizeof(int));
+
+
+
+typedef struct {
+    boolean isObjectReference;
+    union {
+
+    };
+};
+
 
 /* calls for argv check and program run function */
 int main(int argc, char *argv[]){
@@ -135,7 +156,7 @@ int main(int argc, char *argv[]){
  * @param[]: string Parameter
  * if wrong param -> Error message to exit
  */
-void catch_param(char param[]){
+void catch_param(char* param){
     if(EQSTRING(param, "--version")){
         printf(VERSION);
     }else if(EQSTRING(param, "--help")) {
@@ -147,7 +168,7 @@ void catch_param(char param[]){
         exit(1);
     }else{
         if(debug_flag == 1){
-            //debug(param);
+            debug(param);
         }else{
             run(param);
         }
@@ -544,7 +565,7 @@ void read_instructions_into_memory(FILE *fp){
     }
 }
 
-
+res
 /*
  * loading binary into memory
  * @program_file_path: path to binary
@@ -579,6 +600,41 @@ void print_assambler_instructions(void){
 }
 
 
+
+/*
+ *
+ * DEBUGGER
+ *
+ * */
+void debug(char* program_file_path) {
+    char input;
+    stack_pointer = 0;
+    program_counter = 0;
+    load_program_to_memory(program_file_path);
+    system("clear");
+    printf("\n");
+    print_assambler_instructions_debug(program_counter,program_counter+1);
+    print_menu();
+    while(program_counter < no_of_instructions){
+        switch (input = getchar()){
+            case 'x' :
+                system("clear");
+                printf("\n");
+                print_assambler_instructions_debug(program_counter,program_counter+1);
+                print_menu();
+                opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
+                break;
+            case 'm' :
+                system("clear");
+                print_memory();
+                print_menu();
+                printf("\n");
+
+        }
+    }
+    return;
+}
+
 void print_assambler_instructions_debug(int current_asm, int next_asm){
     char buf[80];
     for(int i = 0; i < no_of_instructions; i++){
@@ -594,3 +650,20 @@ void print_assambler_instructions_debug(int current_asm, int next_asm){
     }
 }
 
+void print_menu(void){
+    printf("\n" \
+    ANSI_COLOR_GREEN"[x]" ANSI_COLOR_RESET  " execute next instruction\n" \
+    ANSI_COLOR_GREEN"[<linenumber>]" ANSI_COLOR_RESET " set breakpoint\n"\
+    ANSI_COLOR_GREEN"[m]"ANSI_COLOR_RESET " view memory"
+    );
+    printf(ANSI_COLOR_RED"\n\nCommand: "ANSI_COLOR_RESET);
+}
+
+
+void print_memory(void){
+    char buf[80];
+    for(int i = 0; i < STACK_SIZE; i++){
+        sprintf(buf, ANSI_COLOR_RED "%d [current instruction]" ANSI_COLOR_RESET, stack[i]);
+        printf("%d\t%s\t%s\n", i, instructions[OPCODE(memory[i])], buf);
+    }
+}

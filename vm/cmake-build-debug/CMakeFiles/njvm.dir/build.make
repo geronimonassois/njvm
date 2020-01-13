@@ -79,6 +79,8 @@ njvm_EXTERNAL_OBJECTS =
 
 njvm: CMakeFiles/njvm.dir/njvm.c.o
 njvm: CMakeFiles/njvm.dir/build.make
+njvm: /usr/lib/libcurses.so
+njvm: /usr/lib/libform.so
 njvm: CMakeFiles/njvm.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable njvm"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/njvm.dir/link.txt --verbose=$(VERBOSE)
