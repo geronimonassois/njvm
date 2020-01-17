@@ -20,5 +20,7 @@ typedef struct {
 void fatalError(char *msg);		/* print a message and exit */
 ObjRef newPrimObject(int dataSize);	/* create a new primitive object */
 
+ObjRef newPrimitiveObject(int numBytes);
+ObjRef newCompoundObject(int numObjRefs);
 
 #endif /* _SUPPORT_H_ */

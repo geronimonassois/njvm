@@ -51,6 +51,18 @@ int pushr(int);
 int popr(int);
 int dup(int);
 
+//Aufgabe 7
+int new(int);
+int getf(int);
+int putf(int);
+int newa(int);
+int getfa(int);
+int putfa(int);
+int getsz(int);
+int pushn(int);
+int refeq(int);
+int refne(int);
+
 /*
  * Structures
  */

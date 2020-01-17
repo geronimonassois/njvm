@@ -126,7 +126,19 @@ instructionPtr opcode_instruction_pointer[] = {
         drop,
         pushr,
         popr,
-        dup
+        dup,
+
+        //Aufgabe 7
+        new,
+        getf,
+        putf,
+        newa,
+        getfa,
+        putfa,
+        getsz,
+        pushn,
+        refeq,
+        refne
 };
 
 
@@ -178,16 +190,31 @@ void run(char* program_file_path){
     bigFromInt(1);
     BIG_ONE = bip.res;
     load_program_to_memory(program_file_path);
+
+    /*
+    print_assambler_instructions();
+    getchar();
+     */
+
     while(program_counter < no_of_instructions){
         opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
     }
 }
 
 
-ObjRef newPrimObject(int dataSize){
-    ObjRef primObject = malloc(sizeof(unsigned int) + dataSize * sizeof(unsigned char));
-    primObject->size = (unsigned int) dataSize;
+
+ObjRef newPrimitiveObject(int numBytes){
+    ObjRef primObject = malloc(sizeof(unsigned int) + numBytes);
+    primObject->size = (unsigned int) numBytes;
     return primObject;
+}
+
+ObjRef newCompoundObject(int numObjRefs){
+    ObjRef compObject;
+    compObject->size = MSB;
+    compObject->size | numObjRefs;
+    compObject = malloc(sizeof(unsigned int) + (numObjRefs * sizeof(ObjRef*)));
+    return compObject;
 }
 
 
@@ -213,7 +240,6 @@ ObjRef pop_Stack_Object(void){
     } else if (!stack[stack_pointer].isObjectReference){
         exception("Type Mismatch ->\nreference: Object\nactual: Number", __func__, __LINE__);
     }
-    //print_Stack(); //!
     return stack[stack_pointer].u.objRef;
 }
 
@@ -223,7 +249,6 @@ void push_Stack_Object(ObjRef objRef){
     }
     stack[stack_pointer].isObjectReference = true;
     stack[stack_pointer].u.objRef = objRef;
-    //print_Stack(); //!
     stack_pointer++;
 }
 
@@ -234,7 +259,6 @@ int pop_Stack_Number(void){
     } else if (stack[stack_pointer].isObjectReference){
         exception("Type Mismatch ->\nreference: Number\nactual: Object", __func__, __LINE__);
     }
-    //print_Stack(); //!
     return stack[stack_pointer].u.number;
 }
 
@@ -244,9 +268,9 @@ void push_Stack_Number(int immediate){
     }
     stack[stack_pointer].isObjectReference = false;
     stack[stack_pointer].u.number = immediate;
-    //print_Stack(); //!
     stack_pointer++;
 }
+
 
 void pop_Global(int immediate){
     if(immediate <= 0){
@@ -256,13 +280,15 @@ void pop_Global(int immediate){
     static_variables[immediate].u.number = var;
 }
 
+
 void push_Global(int immediate){
     if(immediate < no_of_static_variables){
         exception("Global Stackoverflow Exception", __func__, __LINE__);
     }
-    int var = static_variables[immediate].u.number;
-    push_Stack_Number(var);
+    int memory_Adress = static_variables[immediate].u.number;
+    push_Stack_Number(memory_Adress);
 }
+
 
 void pop_local(int memory_Adress) {
     if (memory_Adress <= 0) {
@@ -563,10 +589,62 @@ int popr(int immediate){
 }
 
 int dup(int immediate){
-    push_Stack_Object(stack[stack_pointer].u.objRef);
+    ObjRef objRef = pop_Stack_Object();
+    push_Stack_Object(objRef);
+    push_Stack_Object(objRef);
     program_counter++;
     return 0;
 }
+
+int new(int immediate){
+    return 0;
+}
+
+
+int getf(int immediate){
+    return 0;
+}
+
+
+int putf(int immediate){
+    return 0;
+}
+
+
+int newa(int immediate){
+    return 0;
+}
+
+
+int getfa(int immediate){
+    return 0;
+}
+
+
+int putfa(int immediate){
+    return 0;
+}
+
+
+int getsz(int immediate){
+    return 0;
+}
+
+
+int pushn(int immediate){
+    return 0;
+}
+
+
+int refeq(int immediate){
+    return 0;
+}
+
+
+int refne(int immediate){
+    return 0;
+}
+
 
 void check_file_format(FILE *fp){
     char head[4];
