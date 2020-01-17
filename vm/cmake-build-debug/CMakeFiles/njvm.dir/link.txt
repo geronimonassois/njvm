@@ -1,1 +1,1 @@
-/usr/bin/cc -g   CMakeFiles/njvm.dir/njvm.c.o  -o njvm -lcurses -lform 
+/usr/bin/cc -g   CMakeFiles/njvm.dir/njvm.c.o CMakeFiles/njvm.dir/debugger/debugger.c.o  -o njvm  -L/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/bigint/build/lib -Wl,-rpath,/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/bigint/build/lib -lbigint 

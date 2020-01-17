@@ -6,7 +6,17 @@
 
 #IncludeRegexTransform: 
 
+/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/bigint/src/bigint.h
+stdio.h
+-
+support.h
+/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/bigint/src/support.h
+
+/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/bigint/src/support.h
+
 /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/constants.h
+bigint/src/bigint.h
+/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/bigint/src/bigint.h
 
 /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/instructions.h
 
@@ -19,8 +29,6 @@ string.h
 -
 stdlib.h
 -
-ncurses.h
--
 njvm.h
 /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/njvm.h
 macro.h
@@ -29,6 +37,12 @@ constants.h
 /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/constants.h
 instructions.h
 /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/instructions.h
+bigint/src/bigint.h
+/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/bigint/src/bigint.h
+bigint/src/support.h
+/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/bigint/src/support.h
 
 /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/njvm.h
+bigint/src/support.h
+/home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/bigint/src/support.h
 

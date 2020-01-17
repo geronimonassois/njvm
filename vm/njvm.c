@@ -8,23 +8,28 @@
 #include "macro.h"
 #include "constants.h"
 #include "instructions.h"
+#include "bigint/src/bigint.h"
+#include "bigint/src/support.h"
+//#include "debugger/debugger.h"
+
+#define STACK_SIZE 64
+#define MEMORY_SLOT_SIZE 1024
+
+
+ObjRef BIG_NULL;
+ObjRef BIG_ONE;
 
 
 
-/* Njvm program stack */
-#define STACK_SIZE 100
-#define RETURN_STACK_SIZE 10000
-
-int stack[STACK_SIZE];
-int* static_variables;
-int return_value;
+StackSlot *stack;
+StackSlot *static_variables;
+ObjRef return_value;
 
 int no_of_static_variables;
 int no_of_instructions;
 
 unsigned int* memory;
 unsigned int stack_pointer;
-unsigned int return_stack_pointer;
 unsigned int frame_pointer;
 
 unsigned int debug_flag = 0;
@@ -126,7 +131,6 @@ instructionPtr opcode_instruction_pointer[] = {
 
 
 
-
 /* calls for argv check and program run function */
 int main(int argc, char *argv[]){
     for(int i=1; i < argc; i++){
@@ -152,7 +156,7 @@ void catch_param(char* param){
         exit(1);
     }else{
         if(debug_flag == 1){
-            debug(param);
+            //debug(param);
         }else{
             run(param);
         }
@@ -168,6 +172,11 @@ void run(char* program_file_path){
     printf("%s\n", START);
     stack_pointer = 0;
     program_counter = 0;
+    allocate_memory_for_stack();
+    bigFromInt(0);
+    BIG_NULL = bip.res;
+    bigFromInt(1);
+    BIG_ONE = bip.res;
     load_program_to_memory(program_file_path);
     while(program_counter < no_of_instructions){
         opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
@@ -175,60 +184,102 @@ void run(char* program_file_path){
 }
 
 
+ObjRef newPrimObject(int dataSize){
+    ObjRef primObject = malloc(sizeof(unsigned int) + dataSize * sizeof(unsigned char));
+    primObject->size = (unsigned int) dataSize;
+    return primObject;
+}
+
+
+void fatalError(char *msg){
+    printf("Error: %s\n", msg);
+    exception("BigInt fatal error", __func__ , __LINE__);
+}
+
 /*
  * exception handling
  * */
-void exception(char* message, const char *func, int line){
+void exception(char* message, const char* func, int line){
     fprintf (stderr, ANSI_COLOR_RED "%s: \n" ANSI_COLOR_RESET, message);
     fprintf (stderr, ANSI_COLOR_RED "FUNCTION: \t%s\n" ANSI_COLOR_RESET, func);
     fprintf (stderr, ANSI_COLOR_RED "LINE: \t\t%d\n" ANSI_COLOR_RESET, line);
     exit(1);
 }
 
-int pop_Stack(){
+ObjRef pop_Stack_Object(void){
+    stack_pointer--;
     if(stack_pointer <= 0){
-        exception("Stackunderflow Exception", __func__, __LINE__);
+        exception("Stackunderflow Exception at function: ", __func__, __LINE__);
+    } else if (!stack[stack_pointer].isObjectReference){
+        exception("Type Mismatch ->\nreference: Object\nactual: Number", __func__, __LINE__);
     }
-    return stack[--stack_pointer];
+    //print_Stack(); //!
+    return stack[stack_pointer].u.objRef;
 }
 
-void push_Stack(int immediate){
-    if(stack_pointer == STACK_SIZE-1){
-        exception("Stackoverflow Exception bei Funktion:", __func__, __LINE__);
+void push_Stack_Object(ObjRef objRef){
+    if(stack_pointer >= STACK_SIZE-1){
+        exception("Stackoverflow Exception", __func__, __LINE__);
     }
-    stack[stack_pointer++] = immediate;
+    stack[stack_pointer].isObjectReference = true;
+    stack[stack_pointer].u.objRef = objRef;
+    //print_Stack(); //!
+    stack_pointer++;
+}
+
+int pop_Stack_Number(void){
+    stack_pointer--;
+    if(stack_pointer < 0){
+        exception("Stackunderflow Exception: ", __func__, __LINE__);
+    } else if (stack[stack_pointer].isObjectReference){
+        exception("Type Mismatch ->\nreference: Number\nactual: Object", __func__, __LINE__);
+    }
+    //print_Stack(); //!
+    return stack[stack_pointer].u.number;
+}
+
+void push_Stack_Number(int immediate){
+    if(stack_pointer >= STACK_SIZE-1){
+        exception("Stackoverflow Exception: ", __func__, __LINE__);
+    }
+    stack[stack_pointer].isObjectReference = false;
+    stack[stack_pointer].u.number = immediate;
+    //print_Stack(); //!
+    stack_pointer++;
 }
 
 void pop_Global(int immediate){
     if(immediate <= 0){
         exception("Global Stackunderflow Exception", __func__, __LINE__);
     }
-    int var = pop_Stack();
-    static_variables[immediate] = var;
+    int var = pop_Stack_Number();
+    static_variables[immediate].u.number = var;
 }
 
 void push_Global(int immediate){
     if(immediate < no_of_static_variables){
-        exception("Global Stackoverflow Exception bei Funktion:", __func__, __LINE__);
+        exception("Global Stackoverflow Exception", __func__, __LINE__);
     }
-    int var = static_variables[immediate];
-    push_Stack(var);
+    int var = static_variables[immediate].u.number;
+    push_Stack_Number(var);
 }
 
-void pop_local(int memory_Adress){
-    if(memory_Adress <= 0){
+void pop_local(int memory_Adress) {
+    if (memory_Adress <= 0) {
         exception("Stackunderflow Exception", __func__, __LINE__);
     }
-    int var = pop_Stack();
-    stack[memory_Adress] = var;
+    ObjRef var = pop_Stack_Object();
+    stack[memory_Adress].isObjectReference = true;
+    stack[memory_Adress].u.objRef = var;
 }
 
 void push_local(int memory_Adress){
     if(memory_Adress == STACK_SIZE-1){
-        exception("Stackoverflow Exception bei Funktion:", __func__, __LINE__);
+        exception("Stackoverflow Exception", __func__, __LINE__);
     }
-    int val = stack[memory_Adress];
-    push_Stack(val);
+    stack[memory_Adress].isObjectReference = true;
+    ObjRef val = stack[memory_Adress].u.objRef;
+    push_Stack_Object(val);
 }
 
 int halt (int immediate){
@@ -237,65 +288,74 @@ int halt (int immediate){
 }
 
 int pushc (int immediate){
-    push_Stack(immediate);
+    bigFromInt(immediate);
+    push_Stack_Object(bip.res);
     program_counter++;
     return 0;
 }
 
 int add (int immediate){
-    int num1 = pop_Stack();
-    int num2 = pop_Stack();
-    push_Stack(num1+num2);
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    bigAdd();
+    push_Stack_Object(bip.res);
     program_counter++;
     return 0;
 }
 
 int sub (int immediate){
-    int num1 = pop_Stack();
-    int num2 = pop_Stack();
-    push_Stack(num2-num1);
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    bigSub();
+    push_Stack_Object(bip.res);
     program_counter++;
     return 0;
 }
 
 int mul (int immediate){
-    push_Stack(pop_Stack()*pop_Stack());
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    bigMul();
+    push_Stack_Object(bip.res);
     program_counter++;
     return 0;
 }
 
 int divi (int immediate){
-    int divident = pop_Stack();
-    int numerator = pop_Stack();
-    if (divident == 0 || numerator == 0){
+    bip.op2 = pop_Stack_Object();
+    if (bigToInt() == 0){
         exception("Divide by Zero Exception", __func__, __LINE__);
     }
-    push_Stack(numerator / divident);
+    bip.op1 = pop_Stack_Object();
+    bigDiv();
+    push_Stack_Object(bip.res);
     program_counter++;
     return 0;
 }
 
 int mod (int immediate){
-    int modulent = pop_Stack();
-    int numerator = pop_Stack();
-    if(modulent == 0){
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = bip.op2;
+    if(bigToInt() == 0){
         exception("Modulo by Zero Exception", __func__, __LINE__);
     }
-    pushc(numerator % modulent);
+    bip.op1 = pop_Stack_Object();
+    bigDiv();
+    push_Stack_Object(bip.rem);
     program_counter++;
     return 0;
 }
 
 int rdint (int immediate){
-    int number;
-    scanf("%d", &number);
-    push_Stack(number);
+    bigRead(stdin);
+    push_Stack_Object(bip.res);
     program_counter++;
     return 0;
 }
 
 int wrint (int immediate){
-    printf("%d", pop_Stack());
+    bip.op1 = pop_Stack_Object();
+    bigPrint(stdout);
     program_counter++;
     return 0;
 }
@@ -303,14 +363,16 @@ int wrint (int immediate){
 int rdchr (int immediate){
     char character;
     scanf("%c", &character);
-    push_Stack(character);
+    bigFromInt((unsigned int) character);
+    push_Stack_Object(bip.res);
     program_counter++;
     return 0;
 }
 
 
 int wrchr (int immediate){
-    printf("%c", pop_Stack());
+    bip.op1 = pop_Stack_Object();
+    printf("%c\n", (char) bigToInt());
     program_counter++;
     return 0;
 }
@@ -341,9 +403,9 @@ int popl(int immediate){
 
 int asf(int immediate){
     if((stack_pointer + immediate) > STACK_SIZE-1){
-        exception("Assamble Stackframe Stackoverflow Exception bei Funktion:", __func__, __LINE__);
+        exception("Assamble Stackframe Stackoverflow Exception", __func__, __LINE__);
     }
-    push_Stack(frame_pointer);
+    push_Stack_Number(frame_pointer);
     frame_pointer = stack_pointer;
     stack_pointer += immediate;
     program_counter++;
@@ -352,86 +414,87 @@ int asf(int immediate){
 
 int rsf(int immediate){
     stack_pointer = frame_pointer;
-    frame_pointer = pop_Stack();
+    frame_pointer = pop_Stack_Number();
     program_counter++;
     return 0;
 }
 
 int eq(int immediate){
-    int first_val = pop_Stack();
-    int second_val = pop_Stack();
-    if(first_val == second_val){
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    if(bigCmp() == 0){
+        push_Stack_Object(BIG_ONE);
         program_counter++;
-        push_Stack(1);
         return 1;
     }
     program_counter++;
-    push_Stack(0);
+    push_Stack_Object(BIG_NULL);
     return 0;
 }
 
+
 int ne(int immediate){
-    int first_val = pop_Stack();
-    int second_val = pop_Stack();
-    if(first_val != second_val){
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    if(bigCmp() != 0){
         program_counter++;
-        push_Stack(1);
+        push_Stack_Object(BIG_ONE);
         return 1;
     }
     program_counter++;
-    push_Stack(0);
+    push_Stack_Object(BIG_NULL);
     return 0;
 }
 
 int lt(int immediate){
-    int first_val = pop_Stack();
-    int second_val = pop_Stack();
-    if(first_val > second_val){
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    if(bigCmp() < 0){
         program_counter++;
-        push_Stack(1);
+        push_Stack_Object(BIG_ONE);
         return 1;
     }
     program_counter++;
-    push_Stack(0);
+    push_Stack_Object(BIG_NULL);
     return 0;
 }
 
 int le(int immediate){
-    int first_val = pop_Stack();
-    int second_val = pop_Stack();
-    if(first_val >= second_val){
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    if(bigCmp() <= 0){
         program_counter++;
-        push_Stack(1);
+        push_Stack_Object(BIG_ONE);
         return 1;
     }
     program_counter++;
-    push_Stack(0);
+    push_Stack_Object(BIG_NULL);
     return 0;
 }
 
 int gt(int immediate){
-    int first_val = pop_Stack();
-    int second_val = pop_Stack();
-    if(first_val < second_val){
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    if(bigCmp() > 0){
         program_counter++;
-        push_Stack(1);
+        push_Stack_Object(BIG_ONE);
         return 1;
     }
     program_counter++;
-    push_Stack(0);
+    push_Stack_Object(BIG_NULL);
     return 0;
 }
 
 int ge(int immediate){
-    int first_val = pop_Stack();
-    int second_val = pop_Stack();
-    if(first_val <= second_val){
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    if(bigCmp() >= 0){
         program_counter++;
-        push_Stack(1);
+        push_Stack_Object(BIG_ONE);
         return 1;
     }
     program_counter++;
-    push_Stack(0);
+    push_Stack_Object(BIG_NULL);
     return 0;
 }
 
@@ -444,8 +507,10 @@ int jmp(int immediate){
 }
 
 int brf(int immediate){
-    int eval = pop_Stack();
-    if(eval == 0){
+    ObjRef eval = pop_Stack_Object();
+    bip.op2 = eval;
+    bip.op1 = BIG_NULL;
+    if(bigCmp() == 0){
         jmp(immediate);
         return 0;
     }
@@ -454,8 +519,10 @@ int brf(int immediate){
 }
 
 int brt(int immediate){
-    int eval = pop_Stack();
-    if(eval == 1){
+    ObjRef eval = pop_Stack_Object();
+    bip.op2 = eval;
+    bip.op1 = BIG_NULL;
+    if(bigCmp() != 0){
         jmp(immediate);
         return 0;
     }
@@ -464,39 +531,39 @@ int brt(int immediate){
 }
 
 int call(int immediate){
-    push_Stack(program_counter+1);
+    push_Stack_Number(program_counter+1);
     jmp(immediate);
     return 0;
 }
 
 int ret(int immediate){
-    unsigned int return_adress = pop_Stack();
+    unsigned int return_adress = pop_Stack_Number();
     program_counter = return_adress;
     return 0;
 }
 
 int drop(int immediate){
     for(int i = 0; i < immediate; i++){
-        pop_Stack();
+        pop_Stack_Object();
     }
     program_counter++;
     return 0;
 }
 
 int pushr(int immediate){
-    push_Stack(return_value);
+    push_Stack_Object(return_value);
     program_counter++;
     return 0;
 }
 
 int popr(int immediate){
-    return_value = pop_Stack();
+    return_value = pop_Stack_Object();
     program_counter++;
     return 0;
 }
 
 int dup(int immediate){
-    push_Stack(stack[stack_pointer]);
+    push_Stack_Object(stack[stack_pointer].u.objRef);
     program_counter++;
     return 0;
 }
@@ -504,7 +571,7 @@ int dup(int immediate){
 void check_file_format(FILE *fp){
     char head[4];
     if(fread(&head[0], sizeof(char), 4, fp) != 4){
-        exception("could not read number of requested bytes", __func__, __LINE__);
+        exception("Could not read number of requested bytes", __func__, __LINE__);
     }
     if(strncmp(head, "NJBF", 4) != 0){
         exception("No valid ninja binary file", __func__, __LINE__);
@@ -514,20 +581,20 @@ void check_file_format(FILE *fp){
 void check_file_version_no(FILE *fp){
     int version_no;
     if(fread(&version_no, sizeof(int), 1, fp) != 1){
-        exception("could not read number of requested bytes", __func__, __LINE__);
+        exception("Could not read number of requested bytes", __func__, __LINE__);
     }
     if(version_no != VERSION_NO){
-        exception("The source file version number is incorrect!", __func__, __LINE__);
+        exception("Source file version number is incorrect", __func__, __LINE__);
     }
 }
 
 void allocate_memory_for_instructions(FILE *fp){
     if(fread(&no_of_instructions, sizeof(int), 1, fp) != 1){
-        exception("could not read number of requested bytes", __func__, __LINE__);
+        exception("Could not read number of requested bytes", __func__, __LINE__);
     }
     memory = malloc(no_of_instructions * sizeof(unsigned int));
     if(memory == NULL){
-        exception("memory allocation failed", __func__, __LINE__);
+        exception("Memory allocation failed", __func__, __LINE__);
     }
 }
 
@@ -536,20 +603,26 @@ void allocate_memory_for_static_variables(FILE *fp){
     if(fread(&no_of_static_variables, sizeof(int), 1, fp) != 1){
         exception("could not read number of requested bytes", __func__, __LINE__);
     }
-    static_variables = malloc(no_of_static_variables * sizeof(int));
+    static_variables = malloc(no_of_static_variables * sizeof(ObjRef));
     if(static_variables == NULL){
-        exception("memory allocation failed", __func__, __LINE__);
+        exception("Memory allocation failed", __func__, __LINE__);
     }
 }
 
+
+void allocate_memory_for_stack(void){
+    stack = calloc(MEMORY_SLOT_SIZE, STACK_SIZE);
+    if(stack == NULL){
+        exception("Memory allocation failed", __func__, __LINE__);
+    }
+}
 
 void read_instructions_into_memory(FILE *fp){
     if(fread(memory, sizeof(int), no_of_instructions, fp) != no_of_instructions){
-        exception("could not read number of requested bytes", __func__, __LINE__);
+        exception("Could not read number of requested bytes", __func__, __LINE__);
     }
 }
 
-res
 /*
  * loading binary into memory
  * @program_file_path: path to binary
@@ -584,70 +657,18 @@ void print_assambler_instructions(void){
 }
 
 
-
-/*
- *
- * DEBUGGER
- *
- * */
-void debug(char* program_file_path) {
-    char input;
-    stack_pointer = 0;
-    program_counter = 0;
-    load_program_to_memory(program_file_path);
-    system("clear");
-    printf("\n");
-    print_assambler_instructions_debug(program_counter,program_counter+1);
-    print_menu();
-    while(program_counter < no_of_instructions){
-        switch (input = getchar()){
-            case 'x' :
-                system("clear");
-                printf("\n");
-                print_assambler_instructions_debug(program_counter,program_counter+1);
-                print_menu();
-                opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
-                break;
-            case 'm' :
-                system("clear");
-                print_memory();
-                print_menu();
-                printf("\n");
-
+void print_Stack(void){
+    int i=0;
+    while(i < stack_pointer){
+        if(stack[i].isObjectReference){
+            printf("Obj -> stack[%d]: ", i);
+            bip.op1 = stack[i].u.objRef;
+            bigPrint(stdout);
+            printf("\n");
+        } else {
+            printf("Num -> stack[%d]: %d\n", i, stack[i].u.number);
         }
+        i++;
     }
-    return;
-}
-
-void print_assambler_instructions_debug(int current_asm, int next_asm){
-    char buf[80];
-    for(int i = 0; i < no_of_instructions; i++){
-        int temp = SIGN_EXTEND(IMMEDIATE(memory[i]));
-        if(i == current_asm){
-            sprintf(buf, ANSI_COLOR_RED "%d [current instruction]" ANSI_COLOR_RESET, temp);
-        }else if(i == next_asm){
-            sprintf(buf, ANSI_COLOR_BLUE"%d [next instruction]" ANSI_COLOR_RESET, temp);
-        }else{
-            sprintf(buf, "%d", temp);
-        }
-        printf("%d\t%s\t%s\n", i, instructions[OPCODE(memory[i])], buf);
-    }
-}
-
-void print_menu(void){
-    printf("\n" \
-    ANSI_COLOR_GREEN"[x]" ANSI_COLOR_RESET  " execute next instruction\n" \
-    ANSI_COLOR_GREEN"[<linenumber>]" ANSI_COLOR_RESET " set breakpoint\n"\
-    ANSI_COLOR_GREEN"[m]"ANSI_COLOR_RESET " view memory"
-    );
-    printf(ANSI_COLOR_RED"\n\nCommand: "ANSI_COLOR_RESET);
-}
-
-
-void print_memory(void){
-    char buf[80];
-    for(int i = 0; i < STACK_SIZE; i++){
-        sprintf(buf, ANSI_COLOR_RED "%d [current instruction]" ANSI_COLOR_RESET, stack[i]);
-        printf("%d\t%s\t%s\n", i, instructions[OPCODE(memory[i])], buf);
-    }
+    printf("\nsp: %d\nfp: %d\n\n", stack_pointer, frame_pointer);
 }

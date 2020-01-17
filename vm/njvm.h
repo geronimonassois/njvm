@@ -5,6 +5,8 @@
 #ifndef NJVM_NJVM_H
 #define NJVM_NJVM_H
 
+#include "bigint/src/support.h"
+
 /*
  * ASM Instruction Prototypes
  * */
@@ -50,22 +52,40 @@ int popr(int);
 int dup(int);
 
 /*
+ * Structures
+ */
+typedef enum { false, true } boolean;
+
+typedef struct {
+    boolean isObjectReference;
+    union{
+        ObjRef objRef;
+        int number;
+    } u;
+} StackSlot;
+
+
+/*
  * Functions
  * */
+void print_Stack(void);
+void exception(char* , const char*, int);
 void check_file_format(FILE*);
 void check_file_version_no(FILE*);
 void allocate_memory_for_instructions(FILE*);
 void allocate_memory_for_static_variables(FILE*);
+void allocate_memory_for_stack(void);
 void read_instructions_into_memory(FILE*);
 void load_program_to_memory(char*);
 void catch_param(char* );
 void run(char*);
 void debug(char*);
 void print_assambler_instructions(void);
-void print_assambler_instructions_debug(int, int);
 void print_menu(void);
 void print_memory(void);
-int pop_Stack(void);
-void push_Stack(int);
+ObjRef pop_Stack_Object(void);
+void push_Stack_Object(ObjRef);
+int pop_Number(void);
+void push_Number(int immediate);
 
 #endif //NJVM_NJVM_H

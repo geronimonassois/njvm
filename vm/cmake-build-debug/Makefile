@@ -123,6 +123,33 @@ njvm/fast:
 	$(MAKE) -f CMakeFiles/njvm.dir/build.make CMakeFiles/njvm.dir/build
 .PHONY : njvm/fast
 
+debugger/debugger.o: debugger/debugger.c.o
+
+.PHONY : debugger/debugger.o
+
+# target to build an object file
+debugger/debugger.c.o:
+	$(MAKE) -f CMakeFiles/njvm.dir/build.make CMakeFiles/njvm.dir/debugger/debugger.c.o
+.PHONY : debugger/debugger.c.o
+
+debugger/debugger.i: debugger/debugger.c.i
+
+.PHONY : debugger/debugger.i
+
+# target to preprocess a source file
+debugger/debugger.c.i:
+	$(MAKE) -f CMakeFiles/njvm.dir/build.make CMakeFiles/njvm.dir/debugger/debugger.c.i
+.PHONY : debugger/debugger.c.i
+
+debugger/debugger.s: debugger/debugger.c.s
+
+.PHONY : debugger/debugger.s
+
+# target to generate assembly for a file
+debugger/debugger.c.s:
+	$(MAKE) -f CMakeFiles/njvm.dir/build.make CMakeFiles/njvm.dir/debugger/debugger.c.s
+.PHONY : debugger/debugger.c.s
+
 njvm.o: njvm.c.o
 
 .PHONY : njvm.o
@@ -159,6 +186,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... njvm"
 	@echo "... edit_cache"
+	@echo "... debugger/debugger.o"
+	@echo "... debugger/debugger.i"
+	@echo "... debugger/debugger.s"
 	@echo "... njvm.o"
 	@echo "... njvm.i"
 	@echo "... njvm.s"

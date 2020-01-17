@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/njvm.dir/debugger/debugger.c.o"
   "CMakeFiles/njvm.dir/njvm.c.o"
   "njvm"
   "njvm.pdb"
