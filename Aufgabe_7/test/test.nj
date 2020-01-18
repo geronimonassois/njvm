@@ -1,0 +1,9 @@
+void main() {
+    writeCharacter('a');
+    writeCharacter('\n');
+    writeCharacter('t');
+    writeCharacter('e');
+    writeCharacter('s');
+    writeCharacter('t');
+
+}

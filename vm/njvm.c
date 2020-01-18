@@ -75,7 +75,18 @@ const char *instructions[]={
         "drop",
         "pushr",
         "popr",
-        "du"
+        "du",
+
+        "new",
+        "getf",
+        "putf",
+        "newa",
+        "getfa",
+        "putfa",
+        "getsz",
+        "pushn",
+        "refeq",
+        "refne"
 };
 
 
@@ -203,7 +214,7 @@ void run(char* program_file_path){
 
 
 
-ObjRef newPrimitiveObject(int numBytes){
+ObjRef newPrimObject(int numBytes){
     ObjRef primObject = malloc(sizeof(unsigned int) + numBytes);
     primObject->size = (unsigned int) numBytes;
     return primObject;
@@ -211,9 +222,8 @@ ObjRef newPrimitiveObject(int numBytes){
 
 ObjRef newCompoundObject(int numObjRefs){
     ObjRef compObject;
-    compObject->size = MSB;
-    compObject->size | numObjRefs;
     compObject = malloc(sizeof(unsigned int) + (numObjRefs * sizeof(ObjRef*)));
+    compObject->size = (MSB | numObjRefs);
     return compObject;
 }
 
@@ -227,9 +237,11 @@ void fatalError(char *msg){
  * exception handling
  * */
 void exception(char* message, const char* func, int line){
-    fprintf (stderr, ANSI_COLOR_RED "%s: \n" ANSI_COLOR_RESET, message);
-    fprintf (stderr, ANSI_COLOR_RED "FUNCTION: \t%s\n" ANSI_COLOR_RESET, func);
-    fprintf (stderr, ANSI_COLOR_RED "LINE: \t\t%d\n" ANSI_COLOR_RESET, line);
+    fprintf (stdout, ANSI_COLOR_RED "%s: \n" ANSI_COLOR_RESET, message);
+    fprintf (stdout, ANSI_COLOR_RED "FUNCTION: \t%s\n" ANSI_COLOR_RESET, func);
+    fprintf (stdout, ANSI_COLOR_RED "LINE: \t\t%d\n" ANSI_COLOR_RESET, line);
+    fprintf (stdout, ANSI_COLOR_RED "PROGRAM COUNTER: \t\t%d\n" ANSI_COLOR_RESET, program_counter);
+    //print_assambler_instructions();
     exit(1);
 }
 
@@ -349,9 +361,11 @@ int mul (int immediate){
 
 int divi (int immediate){
     bip.op2 = pop_Stack_Object();
+    /*
     if (bigToInt() == 0){
         exception("Divide by Zero Exception", __func__, __LINE__);
     }
+     */
     bip.op1 = pop_Stack_Object();
     bigDiv();
     push_Stack_Object(bip.res);
@@ -398,7 +412,7 @@ int rdchr (int immediate){
 
 int wrchr (int immediate){
     bip.op1 = pop_Stack_Object();
-    printf("%c\n", (char) bigToInt());
+    printf("%c", (char) bigToInt());
     program_counter++;
     return 0;
 }
@@ -600,8 +614,9 @@ int new(int immediate){
     if(immediate < 0){
         exception("compount object size exception: ", __func__, __LINE__);
     } else {
-        newCompoundObject(immediate);
+        push_Stack_Object(newCompoundObject(immediate));
     }
+    program_counter++;
     return 0;
 }
 
@@ -613,7 +628,8 @@ int getf(int immediate){
     } else if (immediate < 0){
         exception("index less than 0 exception: ", __func__, __LINE__);
     }
-    push_Stack_Object(bip.op2->data[immediate]);
+    push_Stack_Object(GET_REFS(bip.op2)[immediate]);
+    program_counter++;
     return 0;
 }
 
@@ -626,7 +642,8 @@ int putf(int immediate){
     } else if (immediate < 0){
         exception("index less than 0 exception: ", __func__, __LINE__);
     }
-    bip.op1->data[immediate] = bip.op2;
+    GET_REFS(bip.op1)[immediate] = bip.op2;
+    program_counter++;
     return 0;
 }
 
@@ -638,22 +655,26 @@ int newa(int immediate){
     } else {
         push_Stack_Object(newCompoundObject(bigToInt()));
     }
+    program_counter++;
     return 0;
 }
 
 
 int getfa(int immediate){
+
     // index
     bip.op1 = pop_Stack_Object();
+    unsigned int i = bigToInt();
 
     // target object
     bip.op2 = pop_Stack_Object();
 
-    if(!GET_SIZE(bip.op2)){
+    if(IS_PRIM(bip.op2)){
         exception("Type Mismatch ->\nreference: primitive object\nactual: compound object", __func__, __LINE__);
     } else {
-        push_Stack_Object(bip.op2->data[bigToInt()]);
+        push_Stack_Object(GET_REFS(bip.op2)[bigToInt()]);
     }
+    program_counter++;
     return 0;
 }
 
@@ -665,40 +686,62 @@ int putfa(int immediate){
     // index
     bip.op1 = pop_Stack_Object();
 
-    // target object
+    // target
     bip.rem = pop_Stack_Object();
 
-    if(!GET_SIZE(bip.rem)){
+    if(IS_PRIM(bip.rem)){
         exception("Type Mismatch ->\nreference: primitive object\nactual: compound object", __func__, __LINE__);
     } else {
-        bip.rem->data[bigToInt()] = bip.op2;
+        GET_REFS(bip.rem)[bigToInt()] = bip.op2;
     }
+    program_counter++;
     return 0;
 }
 
 
 int getsz(int immediate){
-    ObjRef objRef = pop_Stack_Object();
-    if(IS_PRIM(objRef)){
-        return -1;
+    bip.op1 = pop_Stack_Object();
+    if(IS_PRIM(bip.op1)){
+        bigFromInt(-1);
+        push_Stack_Object(bip.res);
     } else {
-        return GET_SIZE(objRef);
+        bigFromInt(GET_SIZE(bip.op1));
+        push_Stack_Object(bip.res);
     }
+    program_counter++;
+    return 0;
 }
 
 
 int pushn(int immediate){
     push_Stack_Object(NULL);
+    program_counter++;
     return 0;
 }
 
 
 int refeq(int immediate){
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    if(GET_REFS(bip.op2) == GET_REFS(bip.op1)){
+        push_Stack_Object(BIG_ONE);
+    } else {
+        push_Stack_Object(BIG_NULL);
+    }
+    program_counter++;
     return 0;
 }
 
 
 int refne(int immediate){
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    if(GET_REFS(bip.op2) != GET_REFS(bip.op1)){
+        push_Stack_Object(BIG_ONE);
+    } else {
+        push_Stack_Object(BIG_NULL);
+    }
+    program_counter++;
     return 0;
 }
 
