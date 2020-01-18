@@ -220,7 +220,7 @@ ObjRef newCompoundObject(int numObjRefs){
 
 void fatalError(char *msg){
     printf("Error: %s\n", msg);
-    exception("BigInt fatal error", __func__ , __LINE__);
+    exception("BigInt fatal error: ", __func__ , __LINE__);
 }
 
 /*
@@ -597,41 +597,98 @@ int dup(int immediate){
 }
 
 int new(int immediate){
+    if(immediate < 0){
+        exception("compount object size exception: ", __func__, __LINE__);
+    } else {
+        newCompoundObject(immediate);
+    }
     return 0;
 }
 
 
 int getf(int immediate){
+    bip.op2 = pop_Stack_Object();
+    if(GET_SIZE(bip.op2)-1 < immediate){
+        exception("index out of bounds exception: ", __func__, __LINE__);
+    } else if (immediate < 0){
+        exception("index less than 0 exception: ", __func__, __LINE__);
+    }
+    push_Stack_Object(bip.op2->data[immediate]);
     return 0;
 }
 
 
 int putf(int immediate){
+    bip.op2 = pop_Stack_Object();
+    bip.op1 = pop_Stack_Object();
+    if(GET_SIZE(bip.op1)-1 < immediate){
+        exception("index out of bounds exception: ", __func__, __LINE__);
+    } else if (immediate < 0){
+        exception("index less than 0 exception: ", __func__, __LINE__);
+    }
+    bip.op1->data[immediate] = bip.op2;
     return 0;
 }
 
 
 int newa(int immediate){
+    bip.op1 = pop_Stack_Object();
+    if(!IS_PRIM(bip.op1)){
+        exception("Type Mismatch ->\nreference: primitive object\nactual: compound object", __func__, __LINE__);
+    } else {
+        push_Stack_Object(newCompoundObject(bigToInt()));
+    }
     return 0;
 }
 
 
 int getfa(int immediate){
+    // index
+    bip.op1 = pop_Stack_Object();
+
+    // target object
+    bip.op2 = pop_Stack_Object();
+
+    if(!GET_SIZE(bip.op2)){
+        exception("Type Mismatch ->\nreference: primitive object\nactual: compound object", __func__, __LINE__);
+    } else {
+        push_Stack_Object(bip.op2->data[bigToInt()]);
+    }
     return 0;
 }
 
 
 int putfa(int immediate){
+    // object to be placed at given index
+    bip.op2 = pop_Stack_Object();
+
+    // index
+    bip.op1 = pop_Stack_Object();
+
+    // target object
+    bip.rem = pop_Stack_Object();
+
+    if(!GET_SIZE(bip.rem)){
+        exception("Type Mismatch ->\nreference: primitive object\nactual: compound object", __func__, __LINE__);
+    } else {
+        bip.rem->data[bigToInt()] = bip.op2;
+    }
     return 0;
 }
 
 
 int getsz(int immediate){
-    return 0;
+    ObjRef objRef = pop_Stack_Object();
+    if(IS_PRIM(objRef)){
+        return -1;
+    } else {
+        return GET_SIZE(objRef);
+    }
 }
 
 
 int pushn(int immediate){
+    push_Stack_Object(NULL);
     return 0;
 }
 
