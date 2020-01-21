@@ -14,6 +14,11 @@
 
 #define MEMORY_SLOT_SIZE 1024
 
+// TODO
+// Prog Count Umschreiben
+// Holy shit bug, bei Aufruf von Prog + Ausgabe 11111
+
+
 
 ObjRef BIG_NULL;
 ObjRef BIG_ONE;
@@ -226,7 +231,9 @@ void run(char* program_file_path){
      */
 
     while(program_counter < no_of_instructions){
-        opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
+        unsigned int memory_on_prog_count = memory[program_counter];
+        program_counter ++;
+        opcode_instruction_pointer[OPCODE(memory_on_prog_count)](SIGN_EXTEND(IMMEDIATE(memory_on_prog_count)));
     }
 }
 
@@ -347,7 +354,7 @@ int halt (int immediate){
 int pushc (int immediate){
     bigFromInt(immediate);
     push_Stack_Object(bip.res);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -356,7 +363,7 @@ int add (int immediate){
     bip.op1 = pop_Stack_Object();
     bigAdd();
     push_Stack_Object(bip.res);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -365,7 +372,7 @@ int sub (int immediate){
     bip.op1 = pop_Stack_Object();
     bigSub();
     push_Stack_Object(bip.res);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -374,7 +381,7 @@ int mul (int immediate){
     bip.op1 = pop_Stack_Object();
     bigMul();
     push_Stack_Object(bip.res);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -390,30 +397,31 @@ int divi (int immediate){
     bip.op1 = pop_Stack_Object();
     bigDiv();
     push_Stack_Object(bip.res);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
+// TODO EXC
 int mod (int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     bigDiv();
     push_Stack_Object(bip.rem);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 int rdint (int immediate){
     bigRead(stdin);
     push_Stack_Object(bip.res);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 int wrint (int immediate){
     bip.op1 = pop_Stack_Object();
     bigPrint(stdout);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -422,7 +430,7 @@ int rdchr (int immediate){
     scanf("%c", &character);
     bigFromInt((unsigned int) character);
     push_Stack_Object(bip.res);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -430,31 +438,31 @@ int rdchr (int immediate){
 int wrchr (int immediate){
     bip.op1 = pop_Stack_Object();
     printf("%c", (char) bigToInt());
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 int pushg(int immediate){
     push_Global(immediate);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 int popg(int immediate){
     pop_Global(immediate);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 int pushl(int immediate) {
     push_local(frame_pointer+immediate);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 int popl(int immediate){
     pop_local(frame_pointer+immediate);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -469,14 +477,14 @@ int asf(int immediate){
         stack[stack_pointer + i].u.objRef = NULL;
     }
     stack_pointer += immediate;
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 int rsf(int immediate){
     stack_pointer = frame_pointer;
     frame_pointer = pop_Stack_Number();
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -485,10 +493,10 @@ int eq(int immediate){
     bip.op1 = pop_Stack_Object();
     if(bigCmp() == 0){
         push_Stack_Object(BIG_ONE);
-        program_counter++;
+        //program_counter++;
         return 1;
     }
-    program_counter++;
+    //program_counter++;
     push_Stack_Object(BIG_NULL);
     return 0;
 }
@@ -498,11 +506,11 @@ int ne(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() != 0){
-        program_counter++;
+        //program_counter++;
         push_Stack_Object(BIG_ONE);
         return 1;
     }
-    program_counter++;
+    //program_counter++;
     push_Stack_Object(BIG_NULL);
     return 0;
 }
@@ -511,11 +519,11 @@ int lt(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() < 0){
-        program_counter++;
+        //program_counter++;
         push_Stack_Object(BIG_ONE);
         return 1;
     }
-    program_counter++;
+    //program_counter++;
     push_Stack_Object(BIG_NULL);
     return 0;
 }
@@ -524,11 +532,11 @@ int le(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() <= 0){
-        program_counter++;
+        //program_counter++;
         push_Stack_Object(BIG_ONE);
         return 1;
     }
-    program_counter++;
+    //program_counter++;
     push_Stack_Object(BIG_NULL);
     return 0;
 }
@@ -537,11 +545,11 @@ int gt(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() > 0){
-        program_counter++;
+        //program_counter++;
         push_Stack_Object(BIG_ONE);
         return 1;
     }
-    program_counter++;
+    //program_counter++;
     push_Stack_Object(BIG_NULL);
     return 0;
 }
@@ -550,11 +558,11 @@ int ge(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() >= 0){
-        program_counter++;
+        //program_counter++;
         push_Stack_Object(BIG_ONE);
         return 1;
     }
-    program_counter++;
+    //program_counter++;
     push_Stack_Object(BIG_NULL);
     return 0;
 }
@@ -575,7 +583,7 @@ int brf(int immediate){
         jmp(immediate);
         return 0;
     }
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -587,12 +595,12 @@ int brt(int immediate){
         jmp(immediate);
         return 0;
     }
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 int call(int immediate){
-    push_Stack_Number(program_counter+1);
+    push_Stack_Number(program_counter);
     jmp(immediate);
     return 0;
 }
@@ -607,19 +615,19 @@ int drop(int immediate){
     for(int i = 0; i < immediate; i++){
         pop_Stack_Object();
     }
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 int pushr(int immediate){
     push_Stack_Object(return_value);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 int popr(int immediate){
     return_value = pop_Stack_Object();
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -627,7 +635,7 @@ int dup(int immediate){
     ObjRef objRef = pop_Stack_Object();
     push_Stack_Object(objRef);
     push_Stack_Object(objRef);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -637,7 +645,7 @@ int new(int immediate){
     } else {
         push_Stack_Object(newCompoundObject(immediate));
     }
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -650,7 +658,7 @@ int getf(int immediate){
         exception("index less than 0 exception: ", __func__, __LINE__);
     }
     push_Stack_Object(GET_REFS(bip.op2)[immediate]);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -664,7 +672,7 @@ int putf(int immediate){
         exception("index less than 0 exception: ", __func__, __LINE__);
     }
     GET_REFS(bip.op1)[immediate] = bip.op2;
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -676,7 +684,7 @@ int newa(int immediate){
     } else {
         push_Stack_Object(newCompoundObject(bigToInt()));
     }
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -694,7 +702,7 @@ int getfa(int immediate){
     } else {
         push_Stack_Object(GET_REFS(bip.op2)[bigToInt()]);
     }
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -714,7 +722,7 @@ int putfa(int immediate){
     } else {
         GET_REFS(bip.rem)[bigToInt()] = bip.op2;
     }
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -728,14 +736,14 @@ int getsz(int immediate){
         bigFromInt(GET_SIZE(bip.op1));
         push_Stack_Object(bip.res);
     }
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
 
 int pushn(int immediate){
     push_Stack_Object(NULL);
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -748,7 +756,7 @@ int refeq(int immediate){
     } else {
         push_Stack_Object(BIG_NULL);
     }
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -761,7 +769,7 @@ int refne(int immediate){
     } else {
         push_Stack_Object(BIG_NULL);
     }
-    program_counter++;
+    //program_counter++;
     return 0;
 }
 
@@ -815,6 +823,7 @@ void allocate_memory_for_stack(void){
     }
 }
 
+// funktioniert super
 void allocate_memory_for_heap(void){
     heap_start_start = calloc(MEMORY_SLOT_SIZE, heap_size);
     if(heap_start_start == NULL){
@@ -825,6 +834,8 @@ void allocate_memory_for_heap(void){
     heap_limit = &heap_start_start[heap_size*MEMORY_SLOT_SIZE / 2];
     heap_max = &heap_start_start[heap_size*MEMORY_SLOT_SIZE-1];
 }
+
+// 38592 43712
 
 ObjRef heap_alloc(unsigned int size){
     ObjRef heap_address_for_object = (ObjRef)heap_pointer;
@@ -901,9 +912,7 @@ void print_Stack(void){
 
 
 void garbage_collector(void){
-
     printf(ANSI_COLOR_RED"\nSTARTING GARBAGE COLLECTION\n"ANSI_COLOR_RESET);
-
     static int isRunning = 0;
 
     if (isRunning){
@@ -951,7 +960,7 @@ void garbage_collector(void){
 }
 
 void flip(void){
-    unsigned char* heap_temp = heap_start;
+    // unsigned char* heap_temp = heap_start;
 
     if(heap_limit == heap_max){
         heap_limit = heap_start;
@@ -970,7 +979,7 @@ ObjRef relocate(ObjRef orig){
     if(orig == NULL){
         copy = NULL;
     } else if (HEART_IS_BROKEN(orig)){
-        copy = (heap_start + GET_FORWARDPOINTER(orig));
+        copy = (ObjRef)(heap_start + GET_FORWARDPOINTER(orig));
     } else {
         copy = copy_object(orig);
     }
@@ -988,7 +997,7 @@ ObjRef copy_object(ObjRef orig){
     } else {
         size = (sizeof(unsigned int)+(GET_SIZE(orig) * sizeof(ObjRef)));
     }
-    temp_address = heap_alloc(size);
+    temp_address = (unsigned char*)heap_alloc(size);
     int offset = (unsigned int)(temp_address - heap_start);
     memcpy(temp_address, orig, size);
     orig->size = BREAK_MY_HEART(offset);
