@@ -27,11 +27,11 @@ ObjRef return_value;
 int no_of_static_variables;
 int no_of_instructions;
 
-unsigned char* heap;
 unsigned int* memory;
+
+unsigned char* heap_start;
+unsigned char* heap_limit;
 unsigned char* heap_max;
-unsigned char* swap_heap;
-unsigned char* swap_heap_max;
 unsigned int stack_size = 64;
 unsigned int heap_size = 8192;
 unsigned char* heap_pointer;
@@ -815,25 +815,25 @@ void allocate_memory_for_stack(void){
 }
 
 void allocate_memory_for_heap(void){
-    heap = calloc(MEMORY_SLOT_SIZE, heap_size);
-    if(heap == NULL){
+    heap_start = calloc(MEMORY_SLOT_SIZE, heap_size);
+    if(heap_start == NULL){
         exception("Heap memory allocation failed", __func__, __LINE__);
     }
-    heap_pointer = heap;
-    heap_max = &heap[heap_size/2];
-    swap_heap = &heap_max[1];
-    swap_heap_max = &heap[heap_size-1];
+    heap_pointer = heap_start;
+    heap_limit = &heap_start[heap_size / 2];
+    heap_max = &heap_start[heap_size - 1];
 }
 
 ObjRef heap_alloc(unsigned int size){
     ObjRef heap_address_for_object = (ObjRef)heap_pointer;
-    if((heap_pointer+size) >= heap_max){
+    if((heap_pointer+size) >= heap_limit){
         garbage_collector();
-        if((heap_pointer+size) >= heap_max){
+        if((heap_pointer+size) >= heap_limit){
             exception("Out of memory exception: ", __func__, __LINE__);
         }
         heap_address_for_object = (ObjRef)heap_pointer;
     }
+    // TODO check this please
     heap_pointer += size;
     return (ObjRef)heap_address_for_object;
 }
@@ -906,49 +906,54 @@ void garbage_collector(void){
     bip.res = relocate(bip.res);
     bip.rem = relocate(bip.rem);
 
+
+    for(int i=0; i < stack_pointer; i++){
+        if(stack[i].isObjectReference){
+            stack[i].u.objRef = relocate(stack[i].u.objRef);
+            print_heap(stack[i].u.objRef);
+            getchar();
+        }
+    }
+
+
     for(int i = 0; i < no_of_static_variables; i++){
         static_variables[i] = relocate(static_variables[i]);
     }
 
-    for(int i=0; i < stack_pointer; i++){
-        if(stack[i].isObjectReference){
-        stack[i].u.objRef = relocate(stack[i].u.objRef);
-        }
-    }
-
-    ObjRef scan = (ObjRef)heap;
+    unsigned char* scan = heap_start;
+    ObjRef object;
     while(scan != heap_pointer){
-        if(!IS_PRIM((ObjRef)scan)){
-            for(int i = 0; i < GET_SIZE((ObjRef)scan); i++){
-                GET_REFS((ObjRef)scan)[i] = relocate(GET_REFS((ObjRef)scan)[i]);
+        object = (ObjRef)scan;
+        if(object == NULL){
+            scan += sizeof(unsigned int);
+        } else if (!IS_PRIM(object)){
+            for(int i = 0; i < GET_SIZE(object); i++){
+                GET_REFS(object)[i] = relocate(GET_REFS(object)[i]);
             }
-            scan += (GET_SIZE((ObjRef) scan) * sizeof(ObjRef)) + sizeof(unsigned int);
+            scan += (GET_SIZE(object) * sizeof(ObjRef)) + sizeof(unsigned int);
         } else {
-            scan += GET_SIZE((ObjRef) scan) + sizeof(unsigned int);
+            scan += GET_SIZE(object) + sizeof(unsigned int);
         }
     }
 }
 
 void flip(void){
-    unsigned char* heap_temp = swap_heap;
-    unsigned char* heap_max_temp = heap_max;
+    unsigned char* heap_temp = heap_start;
 
-    swap_heap = heap;
-    heap = heap_temp;
-    heap_pointer = heap;
+    heap_start = heap_limit;
 
-    heap_max = swap_heap_max;
-    swap_heap_max = heap_max_temp;
+    heap_limit = heap_max;
+
+    heap_max = heap_temp;
 }
 
 
-//Pimmelkrampf
 ObjRef relocate(ObjRef orig){
     ObjRef copy = NULL;
     if(orig == NULL){
         copy = NULL;
     } else if (HEART_IS_BROKEN(orig)){
-        copy = (heap + GET_FORWARDPOINTER(orig));
+        copy = (heap_start + GET_FORWARDPOINTER(orig));
     } else {
         copy = copy_object(orig);
     }
@@ -960,15 +965,35 @@ ObjRef copy_object(ObjRef orig){
     unsigned char*  temp_address;
     unsigned int size;
 
+
+    boolean flag = false;
+    if(IS_PRIM(orig)){
+        flag = true;
+        printf("\nBEFORE - value: \n");
+        print_heap(orig);
+    }
+
+
+
     if(IS_PRIM(orig)){
         size =(sizeof(unsigned int)+GET_SIZE(orig));
     } else {
         size = (sizeof(unsigned int)+(GET_SIZE(orig) * sizeof(ObjRef)));
     }
     temp_address = heap_alloc(size);
-    int offset = (unsigned int)(temp_address-heap);
+    int offset = (unsigned int)(temp_address - heap_start);
     memcpy(temp_address, orig, size);
     orig->size = BREAK_MY_HEART(orig);
     orig->size = SET_FORWARDPOINTER(orig, offset);
+
+    if(flag) {
+        printf("AFTER - value: \n");
+        print_heap((ObjRef) temp_address);
+    }
     return (ObjRef)temp_address;
+}
+
+
+void print_heap(ObjRef obj){
+    printf("obj size: %d\n", GET_SIZE(obj));
 }

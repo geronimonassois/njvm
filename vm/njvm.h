@@ -107,4 +107,7 @@ void push_Stack_Object(ObjRef);
 int pop_Number(void);
 void push_Number(int immediate);
 
+
+void print_heap(ObjRef);
+
 #endif //NJVM_NJVM_H
