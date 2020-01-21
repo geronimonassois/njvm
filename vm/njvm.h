@@ -12,56 +12,56 @@
  * */
 
 // Aufgabe 1
-int halt (int);
-int pushc (int);
-int add (int);
-int sub (int);
-int mul (int);
-int divi (int);
-int mod (int);
-int rdint (int);
-int wrint (int);
-int rdchr (int);
-int wrchr (int);
+void halt (int);
+void pushc (int);
+void add (int);
+void sub (int);
+void mul (int);
+void divi (int);
+void mod (int);
+void rdint (int);
+void wrint (int);
+void rdchr (int);
+void wrchr (int);
 
 // Aufgabe 2
-int pushg(int);
-int popg(int);
-int asf(int);
-int rsf(int);
-int pushl(int);
-int popl(int);
+void pushg(int);
+void popg(int);
+void asf(int);
+void rsf(int);
+void pushl(int);
+void popl(int);
 
 // Aufgabe 3
-int eq(int);
-int ne(int);
-int lt(int);
-int le(int);
-int gt(int);
-int ge(int);
-int jmp(int);
-int brf(int);
-int brt(int);
+void eq(int);
+void ne(int);
+void lt(int);
+void le(int);
+void gt(int);
+void ge(int);
+void jmp(int);
+void brf(int);
+void brt(int);
 
 // Aufgabe 4
-int call(int);
-int ret(int);
-int drop(int);
-int pushr(int);
-int popr(int);
-int dup(int);
+void call(int);
+void ret(int);
+void drop(int);
+void pushr(int);
+void popr(int);
+void dup(int);
 
 //Aufgabe 7
-int new(int);
-int getf(int);
-int putf(int);
-int newa(int);
-int getfa(int);
-int putfa(int);
-int getsz(int);
-int pushn(int);
-int refeq(int);
-int refne(int);
+void new(int);
+void getf(int);
+void putf(int);
+void newa(int);
+void getfa(int);
+void putfa(int);
+void getsz(int);
+void pushn(int);
+void refeq(int);
+void refne(int);
 
 /*
  * Structures
@@ -80,7 +80,12 @@ typedef struct {
 /*
  * Functions
  * */
-void print_Stack(void);
+void garbage_collector_recursive_exception(short);
+void relocate_Objects(void);
+void relocate_big_int(void);
+void scanning(void);
+void allocate_program_memory(void);
+void setup_big_int(void);
 void exception(char* , const char*, int);
 void check_file_format(FILE*);
 void check_file_version_no(FILE*);
