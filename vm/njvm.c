@@ -217,6 +217,14 @@ void run(char* program_file_path){
     BIG_ONE = bip.res;
     load_program_to_memory(program_file_path);
 
+    /*
+    ObjRef o = newPrimObject(6);
+    o->size = BREAK_MY_HEART(o);
+    //o->size = SET_FORWARDPOINTER(o, 13);
+    printf("%d\n", HEART_IS_BROKEN(o));
+    getchar();
+     */
+
     while(program_counter < no_of_instructions){
         opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
     }
@@ -814,6 +822,7 @@ void allocate_memory_for_heap(void){
     heap_pointer = heap;
     heap_max = &heap[heap_size/2];
     swap_heap = &heap_max[1];
+    swap_heap_max = &heap[heap_size-1];
 }
 
 ObjRef heap_alloc(unsigned int size){
@@ -896,6 +905,11 @@ void garbage_collector(void){
     bip.op2 = relocate(bip.op2);
     bip.res = relocate(bip.res);
     bip.rem = relocate(bip.rem);
+
+    for(int i = 0; i < no_of_static_variables; i++){
+        static_variables[i] = relocate(static_variables[i]);
+    }
+
     for(int i=0; i < stack_pointer; i++){
         if(stack[i].isObjectReference){
         stack[i].u.objRef = relocate(stack[i].u.objRef);
@@ -908,9 +922,9 @@ void garbage_collector(void){
             for(int i = 0; i < GET_SIZE((ObjRef)scan); i++){
                 GET_REFS((ObjRef)scan)[i] = relocate(GET_REFS((ObjRef)scan)[i]);
             }
-            scan =+ GET_SIZE((ObjRef) scan)* sizeof(ObjRef)+ sizeof(unsigned int);
+            scan += (GET_SIZE((ObjRef) scan) * sizeof(ObjRef)) + sizeof(unsigned int);
         } else {
-            scan =+ GET_SIZE((ObjRef) scan) + sizeof(unsigned int);
+            scan += GET_SIZE((ObjRef) scan) + sizeof(unsigned int);
         }
     }
 }
@@ -918,13 +932,17 @@ void garbage_collector(void){
 void flip(void){
     unsigned char* heap_temp = swap_heap;
     unsigned char* heap_max_temp = heap_max;
+
     swap_heap = heap;
     heap = heap_temp;
     heap_pointer = heap;
+
+    heap_max = swap_heap_max;
+    swap_heap_max = heap_max_temp;
 }
 
 ObjRef relocate(ObjRef orig){
-    ObjRef copy;
+    ObjRef copy = NULL;
     if(orig == NULL){
         copy = NULL;
     } else if (HEART_IS_BROKEN(orig)){
@@ -937,18 +955,18 @@ ObjRef relocate(ObjRef orig){
 
 
 ObjRef copy_object(ObjRef orig){
-    unsigned char* temp_address;
+    ObjRef temp_address;
     unsigned int size;
 
     if(IS_PRIM(orig)){
-        size =(sizeof(unsigned int)+orig->size);
+        size =(sizeof(unsigned int)+GET_SIZE(orig));
     } else {
-        size = (sizeof(unsigned int)+(GET_SIZE(orig)* sizeof(ObjRef)));
+        size = (sizeof(unsigned int)+(GET_SIZE(orig) * sizeof(ObjRef)));
     }
-    int offset = (heap_pointer-heap);
+    int offset = (int)(heap_pointer-heap);
     temp_address = heap_alloc(orig->size);
     memcpy(temp_address, orig, size);
-    BREAK_MY_HEART(orig);
-    SET_FORWARDPOINTER(orig, offset);
+    orig->size = BREAK_MY_HEART(orig);
+    orig->size = SET_FORWARDPOINTER(orig, offset);
     return (ObjRef)temp_address;
 }
