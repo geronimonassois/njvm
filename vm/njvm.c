@@ -916,7 +916,7 @@ void garbage_collector(void){
         }
     }
 
-    unsigned char* scan = heap;
+    ObjRef scan = (ObjRef)heap;
     while(scan != heap_pointer){
         if(!IS_PRIM((ObjRef)scan)){
             for(int i = 0; i < GET_SIZE((ObjRef)scan); i++){
@@ -941,6 +941,8 @@ void flip(void){
     swap_heap_max = heap_max_temp;
 }
 
+
+//Pimmelkrampf
 ObjRef relocate(ObjRef orig){
     ObjRef copy = NULL;
     if(orig == NULL){
@@ -955,7 +957,7 @@ ObjRef relocate(ObjRef orig){
 
 
 ObjRef copy_object(ObjRef orig){
-    ObjRef temp_address;
+    unsigned char*  temp_address;
     unsigned int size;
 
     if(IS_PRIM(orig)){
@@ -963,8 +965,8 @@ ObjRef copy_object(ObjRef orig){
     } else {
         size = (sizeof(unsigned int)+(GET_SIZE(orig) * sizeof(ObjRef)));
     }
-    int offset = (int)(heap_pointer-heap);
-    temp_address = heap_alloc(orig->size);
+    temp_address = heap_alloc(size);
+    int offset = (unsigned int)(temp_address-heap);
     memcpy(temp_address, orig, size);
     orig->size = BREAK_MY_HEART(orig);
     orig->size = SET_FORWARDPOINTER(orig, offset);
