@@ -10,8 +10,10 @@ void main() {
   while (x != y) {
     if (x > y) {
       x = x - y;
+      writeInteger(x);
     } else {
       y = y - x;
+      writeInteger(y);
     }
   }
   writeInteger(x);

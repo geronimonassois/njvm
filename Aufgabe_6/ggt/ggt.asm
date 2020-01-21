@@ -102,12 +102,18 @@ __1:
 	pushl	1
 	sub
 	popl	0
+	pushl	0
+	call	_writeInteger
+	drop	1
 	jmp	__5
 __4:
 	pushl	1
 	pushl	0
 	sub
 	popl	1
+	pushl	1
+	call	_writeInteger
+	drop	1
 __5:
 __2:
 	pushl	0

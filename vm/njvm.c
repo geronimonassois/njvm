@@ -12,7 +12,6 @@
 #include "bigint/src/support.h"
 //#include "debugger/debugger.h"
 
-#define STACK_SIZE 64
 #define MEMORY_SLOT_SIZE 1024
 
 
@@ -22,13 +21,20 @@ ObjRef BIG_ONE;
 
 
 StackSlot *stack;
-StackSlot *static_variables;
+ObjRef *static_variables;
 ObjRef return_value;
 
 int no_of_static_variables;
 int no_of_instructions;
 
+unsigned char* heap;
 unsigned int* memory;
+unsigned char* heap_max;
+unsigned char* swap_heap;
+unsigned char* swap_heap_max;
+unsigned int stack_size = 64;
+unsigned int heap_size = 8192;
+unsigned char* heap_pointer;
 unsigned int stack_pointer;
 unsigned int frame_pointer;
 
@@ -156,9 +162,7 @@ instructionPtr opcode_instruction_pointer[] = {
 
 /* calls for argv check and program run function */
 int main(int argc, char *argv[]){
-    for(int i=1; i < argc; i++){
-        catch_param(argv[i]);
-    }
+    catch_param(argc, argv);
     return 0;
 }
 
@@ -167,21 +171,31 @@ int main(int argc, char *argv[]){
  * @param[]: string Parameter
  * if wrong param -> Error message to exit
  */
-void catch_param(char* param){
-    if(EQSTRING(param, "--version")){
-        printf(VERSION);
-    }else if(EQSTRING(param, "--help")) {
-        printf(HELP);
-    }else if(EQSTRING(param, "--debug")) {
-        debug_flag = 1;
-    }else if(param[0] == '-' && param[1] == '-'){
-        printf("unknown command line argument '%s', try '%s --help'\n", param, __FILE__);
-        exit(1);
-    }else{
-        if(debug_flag == 1){
-            //debug(param);
-        }else{
-            run(param);
+void catch_param(int param_count, char *params[]){
+    for(int i=1; i < param_count; i++) {
+        if (EQSTRING(params[i], "--version")) {
+            printf(VERSION);
+        } else if (EQSTRING(params[i], "--help")) {
+            printf(HELP);
+        } else if (EQSTRING(params[i], "--stack")) {
+            stack_size = atoi(params[++i]);
+        } else if (EQSTRING(params[i], "--heap")) {
+            heap_size = atoi(params[++i]);
+        } else if (EQSTRING(params[i], "--gcpurge")) {
+            //TODO
+        } else if (EQSTRING(params[i], "--gcstats")) {
+            //TODO
+        } else if (EQSTRING(params[i], "--debug")) {
+            debug_flag = 1;
+        } else if (*params[0] == '-' && *params[1] == '-') {
+            printf("unknown command line argument '%s', try '%s --help'\n", params[i], __FILE__);
+            exit(1);
+        } else {
+            if (debug_flag == 1) {
+                //debug(param);
+            } else {
+                run(params[i]);
+            }
         }
     }
 }
@@ -196,16 +210,12 @@ void run(char* program_file_path){
     stack_pointer = 0;
     program_counter = 0;
     allocate_memory_for_stack();
+    allocate_memory_for_heap();
     bigFromInt(0);
     BIG_NULL = bip.res;
     bigFromInt(1);
     BIG_ONE = bip.res;
     load_program_to_memory(program_file_path);
-
-    /*
-    print_assambler_instructions();
-    getchar();
-     */
 
     while(program_counter < no_of_instructions){
         opcode_instruction_pointer[OPCODE(memory[program_counter])](SIGN_EXTEND(IMMEDIATE(memory[program_counter])));
@@ -213,16 +223,15 @@ void run(char* program_file_path){
 }
 
 
-
 ObjRef newPrimObject(int numBytes){
-    ObjRef primObject = malloc(sizeof(unsigned int) + numBytes);
+    ObjRef primObject = heap_alloc(sizeof(unsigned int) + numBytes);
     primObject->size = (unsigned int) numBytes;
     return primObject;
 }
 
 ObjRef newCompoundObject(int numObjRefs){
     ObjRef compObject;
-    compObject = malloc(sizeof(unsigned int) + (numObjRefs * sizeof(ObjRef*)));
+    compObject = heap_alloc(sizeof(unsigned int) + (numObjRefs * sizeof(ObjRef*)));
     compObject->size = (MSB | numObjRefs);
     return compObject;
 }
@@ -247,7 +256,7 @@ void exception(char* message, const char* func, int line){
 
 ObjRef pop_Stack_Object(void){
     stack_pointer--;
-    if(stack_pointer <= 0){
+    if(stack_pointer < 0){
         exception("Stackunderflow Exception at function: ", __func__, __LINE__);
     } else if (!stack[stack_pointer].isObjectReference){
         exception("Type Mismatch ->\nreference: Object\nactual: Number", __func__, __LINE__);
@@ -256,7 +265,7 @@ ObjRef pop_Stack_Object(void){
 }
 
 void push_Stack_Object(ObjRef objRef){
-    if(stack_pointer >= STACK_SIZE-1){
+    if(stack_pointer >= stack_size-1){
         exception("Stackoverflow Exception", __func__, __LINE__);
     }
     stack[stack_pointer].isObjectReference = true;
@@ -275,7 +284,7 @@ int pop_Stack_Number(void){
 }
 
 void push_Stack_Number(int immediate){
-    if(stack_pointer >= STACK_SIZE-1){
+    if(stack_pointer >= stack_size-1){
         exception("Stackoverflow Exception: ", __func__, __LINE__);
     }
     stack[stack_pointer].isObjectReference = false;
@@ -285,20 +294,20 @@ void push_Stack_Number(int immediate){
 
 
 void pop_Global(int immediate){
-    if(immediate <= 0){
+    if(immediate < 0){
         exception("Global Stackunderflow Exception", __func__, __LINE__);
     }
-    int var = pop_Stack_Number();
-    static_variables[immediate].u.number = var;
+    ObjRef var = pop_Stack_Object();
+    static_variables[immediate] = var;
 }
 
 
 void push_Global(int immediate){
-    if(immediate < no_of_static_variables){
+    if(immediate >= no_of_static_variables){
         exception("Global Stackoverflow Exception", __func__, __LINE__);
     }
-    int memory_Adress = static_variables[immediate].u.number;
-    push_Stack_Number(memory_Adress);
+    ObjRef memory_Adress = static_variables[immediate];
+    push_Stack_Object(memory_Adress);
 }
 
 
@@ -312,7 +321,7 @@ void pop_local(int memory_Adress) {
 }
 
 void push_local(int memory_Adress){
-    if(memory_Adress == STACK_SIZE-1){
+    if(memory_Adress == stack_size-1){
         exception("Stackoverflow Exception", __func__, __LINE__);
     }
     stack[memory_Adress].isObjectReference = true;
@@ -361,6 +370,8 @@ int mul (int immediate){
 
 int divi (int immediate){
     bip.op2 = pop_Stack_Object();
+
+    // TODO exceptions rausnehmen -> durch bigint lib integriert
     /*
     if (bigToInt() == 0){
         exception("Divide by Zero Exception", __func__, __LINE__);
@@ -442,7 +453,7 @@ int popl(int immediate){
 }
 
 int asf(int immediate){
-    if((stack_pointer + immediate) > STACK_SIZE-1){
+    if((stack_pointer + immediate) > stack_size-1){
         exception("Assamble Stackframe Stackoverflow Exception", __func__, __LINE__);
     }
     push_Stack_Number(frame_pointer);
@@ -789,11 +800,35 @@ void allocate_memory_for_static_variables(FILE *fp){
 
 
 void allocate_memory_for_stack(void){
-    stack = calloc(MEMORY_SLOT_SIZE, STACK_SIZE);
+    stack = calloc(MEMORY_SLOT_SIZE, stack_size);
     if(stack == NULL){
-        exception("Memory allocation failed", __func__, __LINE__);
+        exception("Stack memory allocation failed", __func__, __LINE__);
     }
 }
+
+void allocate_memory_for_heap(void){
+    heap = calloc(MEMORY_SLOT_SIZE, heap_size);
+    if(heap == NULL){
+        exception("Heap memory allocation failed", __func__, __LINE__);
+    }
+    heap_pointer = heap;
+    heap_max = &heap[heap_size/2];
+    swap_heap = &heap_max[1];
+}
+
+ObjRef heap_alloc(unsigned int size){
+    ObjRef heap_address_for_object = (ObjRef)heap_pointer;
+    if((heap_pointer+size) >= heap_max){
+        garbage_collector();
+        if((heap_pointer+size) >= heap_max){
+            exception("Out of memory exception: ", __func__, __LINE__);
+        }
+        heap_address_for_object = (ObjRef)heap_pointer;
+    }
+    heap_pointer += size;
+    return (ObjRef)heap_address_for_object;
+}
+
 
 void read_instructions_into_memory(FILE *fp){
     if(fread(memory, sizeof(int), no_of_instructions, fp) != no_of_instructions){
@@ -849,4 +884,71 @@ void print_Stack(void){
         i++;
     }
     printf("\nsp: %d\nfp: %d\n\n", stack_pointer, frame_pointer);
+}
+
+
+void garbage_collector(void){
+    flip();
+    return_value = relocate(return_value);
+    BIG_NULL = relocate(BIG_NULL);
+    BIG_ONE = relocate(BIG_ONE);
+    bip.op1 = relocate(bip.op1);
+    bip.op2 = relocate(bip.op2);
+    bip.res = relocate(bip.res);
+    bip.rem = relocate(bip.rem);
+    for(int i=0; i < stack_pointer; i++){
+        if(stack[i].isObjectReference){
+        stack[i].u.objRef = relocate(stack[i].u.objRef);
+        }
+    }
+
+    unsigned char* scan = heap;
+    while(scan != heap_pointer){
+        if(!IS_PRIM((ObjRef)scan)){
+            for(int i = 0; i < GET_SIZE((ObjRef)scan); i++){
+                GET_REFS((ObjRef)scan)[i] = relocate(GET_REFS((ObjRef)scan)[i]);
+            }
+            scan =+ GET_SIZE((ObjRef) scan)* sizeof(ObjRef)+ sizeof(unsigned int);
+        } else {
+            scan =+ GET_SIZE((ObjRef) scan) + sizeof(unsigned int);
+        }
+    }
+}
+
+void flip(void){
+    unsigned char* heap_temp = swap_heap;
+    unsigned char* heap_max_temp = heap_max;
+    swap_heap = heap;
+    heap = heap_temp;
+    heap_pointer = heap;
+}
+
+ObjRef relocate(ObjRef orig){
+    ObjRef copy;
+    if(orig == NULL){
+        copy = NULL;
+    } else if (HEART_IS_BROKEN(orig)){
+        copy = (heap + GET_FORWARDPOINTER(orig));
+    } else {
+        copy = copy_object(orig);
+    }
+    return copy;
+}
+
+
+ObjRef copy_object(ObjRef orig){
+    unsigned char* temp_address;
+    unsigned int size;
+
+    if(IS_PRIM(orig)){
+        size =(sizeof(unsigned int)+orig->size);
+    } else {
+        size = (sizeof(unsigned int)+(GET_SIZE(orig)* sizeof(ObjRef)));
+    }
+    int offset = (heap_pointer-heap);
+    temp_address = heap_alloc(orig->size);
+    memcpy(temp_address, orig, size);
+    BREAK_MY_HEART(orig);
+    SET_FORWARDPOINTER(orig, offset);
+    return (ObjRef)temp_address;
 }
