@@ -19,7 +19,6 @@ ObjRef BIG_NULL;
 ObjRef BIG_ONE;
 
 
-
 StackSlot *stack;
 ObjRef *static_variables;
 ObjRef return_value;
@@ -30,6 +29,7 @@ int no_of_instructions;
 unsigned int* memory;
 
 unsigned char* heap_start;
+unsigned char* heap_start_start;
 unsigned char* heap_limit;
 unsigned char* heap_max;
 unsigned int stack_size = 64;
@@ -239,8 +239,11 @@ ObjRef newPrimObject(int numBytes){
 
 ObjRef newCompoundObject(int numObjRefs){
     ObjRef compObject;
-    compObject = heap_alloc(sizeof(unsigned int) + (numObjRefs * sizeof(ObjRef*)));
+    compObject = heap_alloc(sizeof(unsigned int) + (numObjRefs * sizeof(ObjRef)));
     compObject->size = (MSB | numObjRefs);
+    for(int i = 0; i < numObjRefs; i++){
+        GET_REFS(compObject)[i] = NULL;
+    }
     return compObject;
 }
 
@@ -258,7 +261,6 @@ void exception(char* message, const char* func, int line){
     fprintf (stdout, ANSI_COLOR_RED "FUNCTION: \t%s\n" ANSI_COLOR_RESET, func);
     fprintf (stdout, ANSI_COLOR_RED "LINE: \t\t%d\n" ANSI_COLOR_RESET, line);
     fprintf (stdout, ANSI_COLOR_RED "PROGRAM COUNTER: \t\t%d\n" ANSI_COLOR_RESET, program_counter);
-    //print_assambler_instructions();
     exit(1);
 }
 
@@ -394,10 +396,6 @@ int divi (int immediate){
 
 int mod (int immediate){
     bip.op2 = pop_Stack_Object();
-    bip.op1 = bip.op2;
-    if(bigToInt() == 0){
-        exception("Modulo by Zero Exception", __func__, __LINE__);
-    }
     bip.op1 = pop_Stack_Object();
     bigDiv();
     push_Stack_Object(bip.rem);
@@ -466,6 +464,10 @@ int asf(int immediate){
     }
     push_Stack_Number(frame_pointer);
     frame_pointer = stack_pointer;
+    for(int i = 0; i < immediate; i++){
+        stack[stack_pointer + i].isObjectReference = true;
+        stack[stack_pointer + i].u.objRef = NULL;
+    }
     stack_pointer += immediate;
     program_counter++;
     return 0;
@@ -683,7 +685,6 @@ int getfa(int immediate){
 
     // index
     bip.op1 = pop_Stack_Object();
-    unsigned int i = bigToInt();
 
     // target object
     bip.op2 = pop_Stack_Object();
@@ -815,22 +816,25 @@ void allocate_memory_for_stack(void){
 }
 
 void allocate_memory_for_heap(void){
-    heap_start = calloc(MEMORY_SLOT_SIZE, heap_size);
-    if(heap_start == NULL){
+    heap_start_start = calloc(MEMORY_SLOT_SIZE, heap_size);
+    if(heap_start_start == NULL){
         exception("Heap memory allocation failed", __func__, __LINE__);
     }
-    heap_pointer = heap_start;
-    heap_limit = &heap_start[heap_size / 2];
-    heap_max = &heap_start[heap_size - 1];
+    heap_start = heap_start_start;
+    heap_pointer = heap_start_start;
+    heap_limit = &heap_start_start[heap_size*MEMORY_SLOT_SIZE / 2];
+    heap_max = &heap_start_start[heap_size*MEMORY_SLOT_SIZE-1];
 }
 
 ObjRef heap_alloc(unsigned int size){
     ObjRef heap_address_for_object = (ObjRef)heap_pointer;
-    if((heap_pointer+size) >= heap_limit){
+    if((heap_pointer+size) > heap_limit){
         garbage_collector();
-        if((heap_pointer+size) >= heap_limit){
+
+        if((heap_pointer+size) > heap_limit){
             exception("Out of memory exception: ", __func__, __LINE__);
         }
+
         heap_address_for_object = (ObjRef)heap_pointer;
     }
     // TODO check this please
@@ -897,7 +901,30 @@ void print_Stack(void){
 
 
 void garbage_collector(void){
+
+    printf(ANSI_COLOR_RED"\nSTARTING GARBAGE COLLECTION\n"ANSI_COLOR_RESET);
+
+    static int isRunning = 0;
+
+    if (isRunning){
+        exception("recursive garbage collection", __func__, __LINE__);
+    }
+
+    isRunning = 1;
+
     flip();
+
+    for(int i=0; i < stack_pointer; i++){
+        if(stack[i].isObjectReference){
+            stack[i].u.objRef = relocate(stack[i].u.objRef);
+        }
+    }
+
+
+    for(int i = 0; i < no_of_static_variables; i++){
+        static_variables[i] = relocate(static_variables[i]);
+    }
+
     return_value = relocate(return_value);
     BIG_NULL = relocate(BIG_NULL);
     BIG_ONE = relocate(BIG_ONE);
@@ -907,26 +934,11 @@ void garbage_collector(void){
     bip.rem = relocate(bip.rem);
 
 
-    for(int i=0; i < stack_pointer; i++){
-        if(stack[i].isObjectReference){
-            stack[i].u.objRef = relocate(stack[i].u.objRef);
-            print_heap(stack[i].u.objRef);
-            getchar();
-        }
-    }
-
-
-    for(int i = 0; i < no_of_static_variables; i++){
-        static_variables[i] = relocate(static_variables[i]);
-    }
-
     unsigned char* scan = heap_start;
     ObjRef object;
     while(scan != heap_pointer){
         object = (ObjRef)scan;
-        if(object == NULL){
-            scan += sizeof(unsigned int);
-        } else if (!IS_PRIM(object)){
+        if (!IS_PRIM(object)){
             for(int i = 0; i < GET_SIZE(object); i++){
                 GET_REFS(object)[i] = relocate(GET_REFS(object)[i]);
             }
@@ -935,16 +947,21 @@ void garbage_collector(void){
             scan += GET_SIZE(object) + sizeof(unsigned int);
         }
     }
+    isRunning = 0;
 }
 
 void flip(void){
     unsigned char* heap_temp = heap_start;
 
-    heap_start = heap_limit;
+    if(heap_limit == heap_max){
+        heap_limit = heap_start;
+        heap_start = heap_start_start;
+    } else {
+        heap_start = heap_limit;
+        heap_limit = heap_max;
+    }
+    heap_pointer = heap_start;
 
-    heap_limit = heap_max;
-
-    heap_max = heap_temp;
 }
 
 
@@ -966,15 +983,6 @@ ObjRef copy_object(ObjRef orig){
     unsigned int size;
 
 
-    boolean flag = false;
-    if(IS_PRIM(orig)){
-        flag = true;
-        printf("\nBEFORE - value: \n");
-        print_heap(orig);
-    }
-
-
-
     if(IS_PRIM(orig)){
         size =(sizeof(unsigned int)+GET_SIZE(orig));
     } else {
@@ -983,13 +991,8 @@ ObjRef copy_object(ObjRef orig){
     temp_address = heap_alloc(size);
     int offset = (unsigned int)(temp_address - heap_start);
     memcpy(temp_address, orig, size);
-    orig->size = BREAK_MY_HEART(orig);
-    orig->size = SET_FORWARDPOINTER(orig, offset);
+    orig->size = BREAK_MY_HEART(offset);
 
-    if(flag) {
-        printf("AFTER - value: \n");
-        print_heap((ObjRef) temp_address);
-    }
     return (ObjRef)temp_address;
 }
 
