@@ -1,3 +1,6 @@
+// todo BITTE DIE BIT / BYTEZAHLEN in GCSTATS kontrollieren, bin müde
+
+
 // Libs
 #include <stdio.h>
 #include <string.h>
@@ -35,6 +38,8 @@ unsigned int stack_size = 64;
 unsigned int heap_size = 8192;
 unsigned int* memory;
 
+unsigned int heap_obj_count = 0;
+unsigned int obj_alive = 0;
 unsigned int debug_flag = 0;
 unsigned short gcpurge = 0;
 unsigned short gcstats = 0;
@@ -315,6 +320,7 @@ void push_local(unsigned int memory_Adress){
 
 
 void halt (int immediate){
+    garbage_collector();
     printf("%s\n", STOP);
     exit(1);
 }
@@ -736,6 +742,9 @@ void allocate_memory_for_heap(void){
 
 
 ObjRef heap_alloc(unsigned int size){
+    if(gcstats){
+        heap_obj_count++;
+    }
     ObjRef heap_address_for_object = (ObjRef)heap_pointer;
     if((heap_pointer+size) > heap_write_memory_end){
         garbage_collector();
@@ -772,6 +781,11 @@ void load_program_to_memory(char* program_file_path){
 
 
 void garbage_collector(void){
+    if(gcstats){
+        printf("\n------------------------------------------------------------------------------------\n");
+        printf("Es Wurden: %d Objekte seit dem letzten collect angelegt\n",heap_obj_count);
+        printf("Es wurde: %d Speicher genutzt\n",((int)heap_write_memory_end - (int)heap_pointer)*8);
+    }
     static short isRunning = 0;
     garbage_collector_recursive_exception(isRunning);
     isRunning = 1;
@@ -785,6 +799,13 @@ void garbage_collector(void){
         } else{
             null_unused_heap(heap_write_memory_end,heap_max);
         }
+    }
+    if(gcstats){
+        printf("Es ist: %d Speicher nach dem collecten frei\n",((int)heap_write_memory_end - (int)heap_pointer)*8);
+        printf("Es leben noch: %d Objekte nach dem collecten\n", obj_alive + no_of_static_variables);
+        printf("------------------------------------------------------------------------------------\n");
+        heap_obj_count = 0;
+        obj_alive = 0;
     }
     isRunning = 0;
 }
@@ -801,6 +822,9 @@ void relocate_Objects(){
     for(int i=0; i < stack_pointer; i++){
         if(stack[i].isObjectReference){
             stack[i].u.objRef = relocate(stack[i].u.objRef);
+            if(gcstats){
+                obj_alive ++;
+            }
         }
     }
     for(int i = 0; i < no_of_static_variables; i++){
@@ -824,6 +848,9 @@ void scanning(){
     while(scan != heap_pointer){
         object = (ObjRef)scan;
         if (!IS_PRIM(object)){
+            if(gcstats){
+                obj_alive ++;
+            }
             for(int i = 0; i < GET_SIZE(object); i++){
                 GET_REFS(object)[i] = relocate(GET_REFS(object)[i]);
             }
