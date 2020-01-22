@@ -24,7 +24,7 @@
 // Garbage collector überprüfen
 
 
-ObjRef BIG_NULL;
+//ObjRef BIG_NULL;
 ObjRef BIG_ONE;
 
 
@@ -204,15 +204,9 @@ void catch_param(int param_count, char *params[]){
     }
 }
 
-
-/*
- * Main Program flow function
- * @program_file_path: path to binary
- * */
 void run(char* program_file_path){
     printf("%s\n", START);
     allocate_program_memory();
-    setup_big_int();
     stack_pointer = 0;
     program_counter = 0;
     load_program_to_memory(program_file_path);
@@ -220,29 +214,25 @@ void run(char* program_file_path){
     unsigned int instruction_cont = 0;
     while(program_counter < no_of_instructions){
         memory_on_program_counter = memory[program_counter];
-        shit_debug_func(instruction_cont++,memory_on_program_counter); // <------ !
+        //shit_debug_func(instruction_cont++,memory_on_program_counter); // <------ !
         program_counter ++;
         opcode_instruction_pointer[OPCODE(memory_on_program_counter)](SIGN_EXTEND(IMMEDIATE(memory_on_program_counter)));
     }
 }
+
 
 void allocate_program_memory(){
     allocate_memory_for_stack();
     allocate_memory_for_heap();
 }
 
-void setup_big_int(){
-    bigFromInt(0);
-    BIG_NULL = bip.res; // todo clear
-    bigFromInt(1);
-    BIG_ONE = bip.res; // todo clear
-}
 
 ObjRef newPrimObject(int numBytes){
     ObjRef primObject = heap_alloc(sizeof(unsigned int) + numBytes);
     primObject->size = (unsigned int) numBytes;
     return primObject;
 }
+
 
 ObjRef newCompoundObject(int numObjRefs){
     ObjRef compObject;
@@ -253,6 +243,7 @@ ObjRef newCompoundObject(int numObjRefs){
     }
     return compObject;
 }
+
 
 void fatalError(char *msg){
     printf("Error: %s\n", msg);
@@ -270,7 +261,8 @@ void exception(char* message, const char* func, int line){
     exit(1);
 }
 
-ObjRef pop_Stack_Object(void){
+
+ObjRef pop_Stack_Object(){
     stack_pointer--;
     if(stack_pointer < 0){
         exception("Stackunderflow Exception at function: ", __func__, __LINE__);
@@ -279,6 +271,7 @@ ObjRef pop_Stack_Object(void){
     }
     return stack[stack_pointer].u.objRef;
 }
+
 
 void push_Stack_Object(ObjRef objRef){
     if(stack_pointer >= stack_size-1){
@@ -289,7 +282,8 @@ void push_Stack_Object(ObjRef objRef){
     stack_pointer++;
 }
 
-int pop_Stack_Number(void){
+
+int pop_Stack_Number(){
     stack_pointer--;
     if(stack_pointer < 0){
         exception("Stackunderflow Exception: ", __func__, __LINE__);
@@ -298,6 +292,7 @@ int pop_Stack_Number(void){
     }
     return stack[stack_pointer].u.number;
 }
+
 
 void push_Stack_Number(int immediate){
     if(stack_pointer >= stack_size-1){
@@ -308,7 +303,7 @@ void push_Stack_Number(int immediate){
     stack_pointer++;
 }
 
-
+// todo eventuell über/unterhalb abfangen
 void pop_Global(int immediate){
     if(immediate < 0){
         exception("Global Stackunderflow Exception", __func__, __LINE__);
@@ -326,7 +321,7 @@ void push_Global(int immediate){
     push_Stack_Object(memory_Adress);
 }
 
-
+// todo eventuell über/unterhalb abfangen
 void pop_local(unsigned int memory_Adress) {
     if (memory_Adress <= 0) {
         exception("Stackunderflow Exception", __func__, __LINE__);
@@ -336,24 +331,27 @@ void pop_local(unsigned int memory_Adress) {
     stack[memory_Adress].u.objRef = var;
 }
 
+
 void push_local(unsigned int memory_Adress){
     if(memory_Adress == stack_size-1){
         exception("Stackoverflow Exception", __func__, __LINE__);
     }
-    stack[memory_Adress].isObjectReference = true;
     ObjRef val = stack[memory_Adress].u.objRef;
     push_Stack_Object(val);
 }
+
 
 void halt (int immediate){
     printf("%s\n", STOP);
     exit(1);
 }
 
+
 void pushc (int immediate){
     bigFromInt(immediate);
     push_Stack_Object(bip.res);
 }
+
 
 void add (int immediate){
     bip.op2 = pop_Stack_Object();
@@ -362,12 +360,14 @@ void add (int immediate){
     push_Stack_Object(bip.res);
 }
 
+
 void sub (int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     bigSub();
     push_Stack_Object(bip.res);
 }
+
 
 void mul (int immediate){
     bip.op2 = pop_Stack_Object();
@@ -376,6 +376,7 @@ void mul (int immediate){
     push_Stack_Object(bip.res);
 }
 
+
 void divi (int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
@@ -383,7 +384,7 @@ void divi (int immediate){
     push_Stack_Object(bip.res);
 }
 
-// TODO EXC // why ?
+
 void mod (int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
@@ -391,15 +392,18 @@ void mod (int immediate){
     push_Stack_Object(bip.rem);
 }
 
+
 void rdint (int immediate){
     bigRead(stdin);
     push_Stack_Object(bip.res);
 }
 
+
 void wrint (int immediate){
     bip.op1 = pop_Stack_Object();
     bigPrint(stdout);
 }
+
 
 void rdchr (int immediate){
     char character;
@@ -414,23 +418,27 @@ void wrchr (int immediate){
     printf("%c", (char) bigToInt());
 }
 
+
 void pushg(int immediate){
     push_Global(immediate);
 }
+
 
 void popg(int immediate){
     pop_Global(immediate);
 }
 
+
 void pushl(int immediate) {
-    printf("%d \t %d\n", immediate, frame_pointer);
     push_local(frame_pointer+ immediate);
 }
+
 
 void popl(int immediate){
     pop_local(frame_pointer+ immediate);
 }
 
+// todo null puschen
 void asf(int immediate){
     if((stack_pointer + immediate) > stack_size-1){
         exception("Assamble Stackframe Stackoverflow Exception", __func__, __LINE__);
@@ -445,106 +453,120 @@ void asf(int immediate){
     stack_pointer += immediate;
 }
 
+
 void rsf(int immediate){
     stack_pointer = frame_pointer;
     frame_pointer = pop_Stack_Number();
 }
 
+
 void eq(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() == 0){
-        push_Stack_Object(BIG_ONE);
+        bigFromInt(1);
     } else {
-        push_Stack_Object(BIG_NULL);
+        bigFromInt(0);
     }
+    push_Stack_Object(bip.res);
 }
+
 
 void ne(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() != 0){
-        push_Stack_Object(BIG_ONE);
+        bigFromInt(1);
     } else {
-        push_Stack_Object(BIG_NULL);
+        bigFromInt(0);
     }
+    push_Stack_Object(bip.res);
 }
+
 
 void lt(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() < 0){
-        push_Stack_Object(BIG_ONE);
+        bigFromInt(1);
     } else {
-        push_Stack_Object(BIG_NULL);
+        bigFromInt(0);
     }
+    push_Stack_Object(bip.res);
 }
+
 
 void le(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() <= 0){
-        push_Stack_Object(BIG_ONE);
+        bigFromInt(1);
     } else {
-        push_Stack_Object(BIG_NULL);
+        bigFromInt(0);
     }
+    push_Stack_Object(bip.res);
 }
+
 
 void gt(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() > 0){
-        push_Stack_Object(BIG_ONE);
+        bigFromInt(1);
     } else {
-        push_Stack_Object(BIG_NULL);
+        bigFromInt(0);
     }
+    push_Stack_Object(bip.res);
 }
+
 
 void ge(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
     if(bigCmp() >= 0){
-        push_Stack_Object(BIG_ONE);
+        bigFromInt(1);
     } else {
-        push_Stack_Object(BIG_NULL);
+        bigFromInt(0);
     }
+    push_Stack_Object(bip.res);
 }
+
 
 void jmp(int immediate){
     if(immediate < 0 || immediate > no_of_instructions){
         exception("Jump address is invalid", __func__, __LINE__);
     }
-    program_counter = immediate;
+    program_counter = (unsigned int)immediate;
 }
+
 
 void brf(int immediate){
-    ObjRef eval = pop_Stack_Object();
-    bip.op2 = eval;
-    bip.op1 = BIG_NULL;
-    if(bigCmp() == 0){
+    bip.op1 = pop_Stack_Object();
+    if(bigToInt() == 0){
         jmp(immediate);
     }
 }
+
 
 void brt(int immediate){
-    ObjRef eval = pop_Stack_Object();
-    bip.op2 = eval;
-    bip.op1 = BIG_NULL;
-    if(bigCmp() != 0){
+    bip.op1 = pop_Stack_Object();
+    if(bigToInt() != 0){
         jmp(immediate);
     }
 }
 
-// todo könnte bei extremen größen probleme machen
+
 void call(int immediate){
     push_Stack_Number((int)program_counter);
     jmp(immediate);
 }
 
+
 void ret(int immediate){
     unsigned int return_adress = pop_Stack_Number();
     program_counter = return_adress;
 }
+
 
 void drop(int immediate){
     for(int i = 0; i < immediate; i++){
@@ -552,19 +574,23 @@ void drop(int immediate){
     }
 }
 
+
 void pushr(int immediate){
     push_Stack_Object(return_value);
 }
 
+
 void popr(int immediate){
     return_value = pop_Stack_Object();
 }
+
 
 void dup(int immediate){
     ObjRef objRef = pop_Stack_Object();
     push_Stack_Object(objRef);
     push_Stack_Object(objRef);
 }
+
 
 void new(int immediate){
     if(immediate < 0){
@@ -574,18 +600,18 @@ void new(int immediate){
     }
 }
 
-// todo
+
 void getf(int immediate){
-    bip.op2 = pop_Stack_Object();
-    if(GET_SIZE(bip.op2)-1 < immediate){
+    bip.op1 = pop_Stack_Object();
+    if(GET_SIZE(bip.op1)-1 < immediate){
         exception("index out of bounds exception: ", __func__, __LINE__);
     } else if (immediate < 0){
         exception("index less than 0 exception: ", __func__, __LINE__);
     }
-    push_Stack_Object(GET_REFS(bip.op2)[immediate]);
+    push_Stack_Object(GET_REFS(bip.op1)[immediate]);
 }
 
-// todo
+
 void putf(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
@@ -607,7 +633,7 @@ void newa(int immediate){
     }
 }
 
-//todo
+//todo ------ heyo guck mich an
 void getfa(int immediate){
     bip.op1 = pop_Stack_Object();       // index
     bip.op2 = pop_Stack_Object();       // target object
@@ -647,27 +673,30 @@ void pushn(int immediate){
     push_Stack_Object(NULL);
 }
 
-// todo
+// todo changed
 void refeq(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
-    if(GET_REFS(bip.op2) == GET_REFS(bip.op1)){
-        push_Stack_Object(BIG_ONE);
+    if(bip.op2 == bip.op1){
+        bigFromInt(1);
     } else {
-        push_Stack_Object(BIG_NULL);
+        bigFromInt(0);
     }
+    push_Stack_Object(bip.res);
 }
 
 // todo
 void refne(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
-    if(GET_REFS(bip.op2) != GET_REFS(bip.op1)){
-        push_Stack_Object(BIG_ONE);
+    if(bip.op2 != bip.op1){
+        bigFromInt(1);
     } else {
-        push_Stack_Object(BIG_NULL);
+        bigFromInt(0);
     }
+    push_Stack_Object(bip.res);
 }
+
 
 void check_file_format(FILE *fp){
     char head[4];
@@ -679,6 +708,7 @@ void check_file_format(FILE *fp){
     }
 }
 
+
 void check_file_version_no(FILE *fp){
     int version_no;
     if(fread(&version_no, sizeof(int), 1, fp) != 1){
@@ -688,6 +718,7 @@ void check_file_version_no(FILE *fp){
         exception("Source file version number is incorrect", __func__, __LINE__);
     }
 }
+
 
 void allocate_memory_for_instructions(FILE *fp){
     if(fread(&no_of_instructions, sizeof(int), 1, fp) != 1){
@@ -718,7 +749,7 @@ void allocate_memory_for_stack(void){
     }
 }
 
-// funktioniert super
+
 void allocate_memory_for_heap(void){
     heap_start_start = calloc(MEMORY_SLOT_SIZE, heap_size);
     if(heap_start_start == NULL){
@@ -729,6 +760,7 @@ void allocate_memory_for_heap(void){
     heap_limit = &heap_start_start[heap_size*MEMORY_SLOT_SIZE / 2];
     heap_max = &heap_start_start[heap_size*MEMORY_SLOT_SIZE-1];
 }
+
 
 ObjRef heap_alloc(unsigned int size){
     ObjRef heap_address_for_object = (ObjRef)heap_pointer;
@@ -753,11 +785,7 @@ void read_instructions_into_memory(FILE *fp){
     }
 }
 
-/*
- * loading binary into memory
- * @program_file_path: path to binary
- * TO-DO: make single "check_file_header"-function!
- * */
+
 void load_program_to_memory(char* program_file_path){
     FILE *fp;
     fp = fopen(program_file_path, "r");
@@ -772,8 +800,9 @@ void load_program_to_memory(char* program_file_path){
     fclose(fp);
 }
 
+
 void garbage_collector(void){
-    printf("gc");
+    printf("\ngc\n");
     static short isRunning = 0;
     garbage_collector_recursive_exception(isRunning);
     isRunning = 1;
@@ -784,11 +813,13 @@ void garbage_collector(void){
     isRunning = 0;
 }
 
+
 void garbage_collector_recursive_exception(short running){
     if (running){
         exception("recursive garbage collection", __func__, __LINE__);
     }
 }
+
 
 void relocate_Objects(){
     for(int i=0; i < stack_pointer; i++){
@@ -802,14 +833,14 @@ void relocate_Objects(){
     return_value = relocate(return_value);
 }
 
+
 void relocate_big_int(){
-    BIG_NULL = relocate(BIG_NULL);
-    BIG_ONE = relocate(BIG_ONE);
     bip.op1 = relocate(bip.op1);
     bip.op2 = relocate(bip.op2);
     bip.res = relocate(bip.res);
     bip.rem = relocate(bip.rem);
 }
+
 
 void scanning(){
     unsigned char* scan = heap_start;
@@ -827,6 +858,7 @@ void scanning(){
     }
 }
 
+
 void flip(){
     if(heap_limit == heap_max){
         heap_limit = heap_start;
@@ -837,6 +869,7 @@ void flip(){
     }
     heap_pointer = heap_start;
 }
+
 
 ObjRef relocate(ObjRef orig){
     ObjRef copy = NULL;
@@ -867,6 +900,6 @@ ObjRef copy_object(ObjRef orig){
 }
 
 void shit_debug_func(unsigned int instruction_cont, unsigned int memory_on_program_counter){
-    printf("instr: %d   \t%s  \tImme: %d\t\t\tFramePoint: %d\n",instruction_cont,
+    printf("Prog_c: %d    \t instr: %d   \t%s  \tImme: %d \t\tFP: %d\n",program_counter,instruction_cont,
             instructions[OPCODE(memory_on_program_counter)],SIGN_EXTEND(IMMEDIATE(memory_on_program_counter)), frame_pointer);
 }

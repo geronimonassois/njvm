@@ -86,7 +86,6 @@ void relocate_Objects(void);
 void relocate_big_int(void);
 void scanning(void);
 void allocate_program_memory(void);
-void setup_big_int(void);
 void exception(char* , const char*, int);
 void check_file_format(FILE*);
 void check_file_version_no(FILE*);

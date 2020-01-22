@@ -5,10 +5,10 @@
  */
 
 #define EQSTRING(param, testString) !strcmp(param, testString)
-#define IMMEDIATE(x) ((x) & 0x00FFFFFFu)
-#define OPCODE(x) (((unsigned int) x) >> 24u)
-#define SIGN_EXTEND(i) ((i) & 0x00800000u ? (i) | 0xFF000000u : (i))
-#define MSB (1u << (unsigned)(8 *sizeof(unsigned int) - 1))
+#define IMMEDIATE(x) ((x) & 0x00FFFFFF)
+#define OPCODE(x) (((unsigned int) x) >> 24)
+#define SIGN_EXTEND(i) ((i) & 0x00800000 ? (i) | 0xFF000000 : (i))
+#define MSB (1 << (unsigned)(8 *sizeof(unsigned int) - 1))
 #define IS_PRIM(objRef) (((objRef)->size & MSB) == 0)
 
 #define GET_REFS(objRef) ((ObjRef *)(objRef)->data)
