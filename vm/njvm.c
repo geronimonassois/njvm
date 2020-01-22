@@ -1,5 +1,5 @@
 // todo BITTE DIE BIT / BYTEZAHLEN in GCSTATS kontrollieren, bin müde
-
+// TODO B bei njlisp out of memory testen
 
 // Libs
 #include <stdio.h>
