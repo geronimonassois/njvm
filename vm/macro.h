@@ -17,6 +17,5 @@
 #define BREAK_MY_HEART(offset) (BROKEN_HEART | offset)
 #define HEART_IS_BROKEN(objRef) (((objRef)->size & BROKEN_HEART) == BROKEN_HEART)
 #define FORWARD_MASK (1u << (8 * sizeof(unsigned int)-2))
-#define SET_FORWARDPOINTER(objRef, offset) (((objRef)->size & (FORWARD_MASK)) | offset)
 #define GET_FORWARDPOINTER(objRef) ((objRef)->size & ~FORWARD_MASK)
-#define GET_SIZE(objRef) ((objRef)->size & ~FORWARD_MASK)
+#define GET_SIZE(objRef) ((objRef)->size & ~MSB)

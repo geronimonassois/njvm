@@ -15,17 +15,7 @@
 #define MEMORY_SLOT_SIZE 1024
 
 // TODO
-// Holy shit bug, bei Aufruf von Prog + Ausgabe 11111
-// Garb. col springt nicht an, Fehler liegt vorher
-// TODO für Mittwoch
-// Test der alten Tests um zu überprüfen ob big int richtig ist
-// Pointer werden Gefickt
-// Big int umschreiben
-// Garbage collector überprüfen
-
-
-//ObjRef BIG_NULL;
-ObjRef BIG_ONE;
+// Test Test Test, gegenprüfen min größe
 
 
 StackSlot *stack;
@@ -600,10 +590,13 @@ void new(int immediate){
     }
 }
 
-
+// todo check if prim !!!!!!
 void getf(int immediate){
     bip.op1 = pop_Stack_Object();
-    if(GET_SIZE(bip.op1)-1 < immediate){
+    if(IS_PRIM(bip.op1)){
+        exception("Getfield for Prim obj: ", __func__, __LINE__);
+    }
+    if(GET_SIZE(bip.op1) <= immediate){
         exception("index out of bounds exception: ", __func__, __LINE__);
     } else if (immediate < 0){
         exception("index less than 0 exception: ", __func__, __LINE__);
@@ -615,7 +608,7 @@ void getf(int immediate){
 void putf(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
-    if(GET_SIZE(bip.op1)-1 < immediate){
+    if(GET_SIZE(bip.op1) <= immediate){
         exception("index out of bounds exception: ", __func__, __LINE__);
     } else if (immediate < 0){
         exception("index less than 0 exception: ", __func__, __LINE__);
@@ -633,7 +626,7 @@ void newa(int immediate){
     }
 }
 
-//todo ------ heyo guck mich an
+
 void getfa(int immediate){
     bip.op1 = pop_Stack_Object();       // index
     bip.op2 = pop_Stack_Object();       // target object
@@ -661,11 +654,10 @@ void getsz(int immediate){
     bip.op1 = pop_Stack_Object();
     if(IS_PRIM(bip.op1)){
         bigFromInt(-1);
-        push_Stack_Object(bip.res);
     } else {
         bigFromInt(GET_SIZE(bip.op1));
-        push_Stack_Object(bip.res);
     }
+    push_Stack_Object(bip.res);
 }
 
 // todo
@@ -673,7 +665,7 @@ void pushn(int immediate){
     push_Stack_Object(NULL);
 }
 
-// todo changed
+
 void refeq(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
@@ -766,14 +758,11 @@ ObjRef heap_alloc(unsigned int size){
     ObjRef heap_address_for_object = (ObjRef)heap_pointer;
     if((heap_pointer+size) > heap_limit){
         garbage_collector();
-
         if((heap_pointer+size) > heap_limit){
             exception("Out of memory exception: ", __func__, __LINE__);
         }
-
         heap_address_for_object = (ObjRef)heap_pointer;
     }
-    // TODO check this please
     heap_pointer += size;
     return (ObjRef)heap_address_for_object;
 }
@@ -787,22 +776,21 @@ void read_instructions_into_memory(FILE *fp){
 
 
 void load_program_to_memory(char* program_file_path){
-    FILE *fp;
-    fp = fopen(program_file_path, "r");
-    if(fp == NULL){
+    FILE *file_pointer;
+    file_pointer = fopen(program_file_path, "r");
+    if(file_pointer == NULL){
         exception("Error opening file", __func__, __LINE__);
     }
-    check_file_format(fp);
-    check_file_version_no(fp);
-    allocate_memory_for_instructions(fp);
-    allocate_memory_for_static_variables(fp);
-    read_instructions_into_memory(fp);
-    fclose(fp);
+    check_file_format(file_pointer);
+    check_file_version_no(file_pointer);
+    allocate_memory_for_instructions(file_pointer);
+    allocate_memory_for_static_variables(file_pointer);
+    read_instructions_into_memory(file_pointer);
+    fclose(file_pointer);
 }
 
 
 void garbage_collector(void){
-    printf("\ngc\n");
     static short isRunning = 0;
     garbage_collector_recursive_exception(isRunning);
     isRunning = 1;
@@ -872,7 +860,7 @@ void flip(){
 
 
 ObjRef relocate(ObjRef orig){
-    ObjRef copy = NULL;
+    ObjRef copy;
     if(orig == NULL){
         copy = NULL;
     } else if (HEART_IS_BROKEN(orig)){
@@ -899,6 +887,7 @@ ObjRef copy_object(ObjRef orig){
     return (ObjRef)temp_address;
 }
 
+// todo am ende raus damit danke
 void shit_debug_func(unsigned int instruction_cont, unsigned int memory_on_program_counter){
     printf("Prog_c: %d    \t instr: %d   \t%s  \tImme: %d \t\tFP: %d\n",program_counter,instruction_cont,
             instructions[OPCODE(memory_on_program_counter)],SIGN_EXTEND(IMMEDIATE(memory_on_program_counter)), frame_pointer);
