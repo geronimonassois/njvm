@@ -217,9 +217,10 @@ void run(char* program_file_path){
     program_counter = 0;
     load_program_to_memory(program_file_path);
     unsigned int memory_on_program_counter;
+    unsigned int instruction_cont = 0;
     while(program_counter < no_of_instructions){
         memory_on_program_counter = memory[program_counter];
-        shit_debug_func(memory_on_program_counter); // <------ !
+        shit_debug_func(instruction_cont++,memory_on_program_counter); // <------ !
         program_counter ++;
         opcode_instruction_pointer[OPCODE(memory_on_program_counter)](SIGN_EXTEND(IMMEDIATE(memory_on_program_counter)));
     }
@@ -422,6 +423,7 @@ void popg(int immediate){
 }
 
 void pushl(int immediate) {
+    printf("%d \t %d\n", immediate, frame_pointer);
     push_local(frame_pointer+ immediate);
 }
 
@@ -729,9 +731,6 @@ void allocate_memory_for_heap(void){
 }
 
 ObjRef heap_alloc(unsigned int size){
-    if(size > 100){
-        printf("%d\n",size);
-    }
     ObjRef heap_address_for_object = (ObjRef)heap_pointer;
     if((heap_pointer+size) > heap_limit){
         garbage_collector();
@@ -867,6 +866,7 @@ ObjRef copy_object(ObjRef orig){
     return (ObjRef)temp_address;
 }
 
-void shit_debug_func(unsigned int memory_on_program_counter){
-    printf("%s  \t%d\n",instructions[OPCODE(memory_on_program_counter)],IMMEDIATE(memory_on_program_counter));
+void shit_debug_func(unsigned int instruction_cont, unsigned int memory_on_program_counter){
+    printf("instr: %d   \t%s  \tImme: %d\t\t\tFramePoint: %d\n",instruction_cont,
+            instructions[OPCODE(memory_on_program_counter)],SIGN_EXTEND(IMMEDIATE(memory_on_program_counter)), frame_pointer);
 }
