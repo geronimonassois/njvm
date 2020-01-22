@@ -14,9 +14,6 @@
 
 #define MEMORY_SLOT_SIZE 1024
 
-// TODO
-// Test Test Test, gegenprüfen min größe
-
 
 StackSlot *stack;
 ObjRef *static_variables;
@@ -25,23 +22,20 @@ ObjRef return_value;
 int no_of_static_variables;
 int no_of_instructions;
 
-unsigned int* memory;
-
 unsigned char* heap_start;
 unsigned char* heap_start_start;
 unsigned char* heap_limit;
 unsigned char* heap_max;
-unsigned int stack_size = 64;
-unsigned int heap_size = 8192;
 unsigned char* heap_pointer;
+
 unsigned int stack_pointer;
 unsigned int frame_pointer;
+unsigned int program_counter;
+unsigned int stack_size = 64;
+unsigned int heap_size = 8192;
+unsigned int* memory;
 
 unsigned int debug_flag = 0;
-
-/*Program Memory counter*/
-unsigned int program_counter;
-
 
 const char *instructions[]={
         "halt",
@@ -93,14 +87,9 @@ const char *instructions[]={
 };
 
 
-/*
- * Typedef for instruction pointer
- * */
 typedef void (*instructionPtr)(int);
 
-/*
- * Instruction Pointer Array
- */
+
 instructionPtr opcode_instruction_pointer[] = {
         // Aufgabe 1
         halt,
@@ -155,16 +144,13 @@ instructionPtr opcode_instruction_pointer[] = {
         refne
 };
 
-/* calls for argv check and program run function */
+
 int main(int argc, char *argv[]){
     catch_param(argc, argv);
     return 0;
 }
 
-/* catches argv parameters
- * @param[]: string Parameter
- * if wrong param -> Error message to exit
- */
+
 void catch_param(int param_count, char *params[]){
     for(int i=1; i < param_count; i++) {
         if (EQSTRING(params[i], "--version")) {
@@ -240,9 +226,7 @@ void fatalError(char *msg){
     exception("BigInt fatal error: ", __func__ , __LINE__);
 }
 
-/*
- * exception handling
- * */
+
 void exception(char* message, const char* func, int line){
     fprintf (stdout, ANSI_COLOR_RED "%s: \n" ANSI_COLOR_RESET, message);
     fprintf (stdout, ANSI_COLOR_RED "FUNCTION: \t%s\n" ANSI_COLOR_RESET, func);
@@ -428,12 +412,11 @@ void popl(int immediate){
     pop_local(frame_pointer+ immediate);
 }
 
-// todo null puschen
+
 void asf(int immediate){
     if((stack_pointer + immediate) > stack_size-1){
         exception("Assamble Stackframe Stackoverflow Exception", __func__, __LINE__);
     }
-    // todo typecast könnte bei extremen größen probleme machen
     push_Stack_Number((int)frame_pointer);
     frame_pointer = stack_pointer;
     for(int i = 0; i < immediate; i++){
@@ -590,13 +573,12 @@ void new(int immediate){
     }
 }
 
-// todo check if prim !!!!!!
+
 void getf(int immediate){
     bip.op1 = pop_Stack_Object();
     if(IS_PRIM(bip.op1)){
         exception("Getfield for Prim obj: ", __func__, __LINE__);
-    }
-    if(GET_SIZE(bip.op1) <= immediate){
+    } else if(GET_SIZE(bip.op1) <= immediate){
         exception("index out of bounds exception: ", __func__, __LINE__);
     } else if (immediate < 0){
         exception("index less than 0 exception: ", __func__, __LINE__);
@@ -885,10 +867,4 @@ ObjRef copy_object(ObjRef orig){
     memcpy(temp_address, orig, size);
     orig->size = BREAK_MY_HEART(offset);
     return (ObjRef)temp_address;
-}
-
-// todo am ende raus damit danke
-void shit_debug_func(unsigned int instruction_cont, unsigned int memory_on_program_counter){
-    printf("Prog_c: %d    \t instr: %d   \t%s  \tImme: %d \t\tFP: %d\n",program_counter,instruction_cont,
-            instructions[OPCODE(memory_on_program_counter)],SIGN_EXTEND(IMMEDIATE(memory_on_program_counter)), frame_pointer);
 }
