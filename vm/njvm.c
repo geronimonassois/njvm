@@ -17,6 +17,11 @@
 // TODO
 // Holy shit bug, bei Aufruf von Prog + Ausgabe 11111
 // Garb. col springt nicht an, Fehler liegt vorher
+// TODO für Mittwoch
+// Test der alten Tests um zu überprüfen ob big int richtig ist
+// Pointer werden Gefickt
+// Big int umschreiben
+// Garbage collector überprüfen
 
 
 ObjRef BIG_NULL;
@@ -211,8 +216,10 @@ void run(char* program_file_path){
     stack_pointer = 0;
     program_counter = 0;
     load_program_to_memory(program_file_path);
+    unsigned int memory_on_program_counter;
     while(program_counter < no_of_instructions){
-        unsigned int memory_on_program_counter = memory[program_counter];
+        memory_on_program_counter = memory[program_counter];
+        shit_debug_func(memory_on_program_counter); // <------ !
         program_counter ++;
         opcode_instruction_pointer[OPCODE(memory_on_program_counter)](SIGN_EXTEND(IMMEDIATE(memory_on_program_counter)));
     }
@@ -370,13 +377,6 @@ void mul (int immediate){
 
 void divi (int immediate){
     bip.op2 = pop_Stack_Object();
-
-    // TODO exceptions rausnehmen -> durch bigint lib integriert
-    /*
-    if (bigToInt() == 0){
-        exception("Divide by Zero Exception", __func__, __LINE__);
-    }
-     */
     bip.op1 = pop_Stack_Object();
     bigDiv();
     push_Stack_Object(bip.res);
@@ -728,9 +728,10 @@ void allocate_memory_for_heap(void){
     heap_max = &heap_start_start[heap_size*MEMORY_SLOT_SIZE-1];
 }
 
-// 38592 43712
-
 ObjRef heap_alloc(unsigned int size){
+    if(size > 100){
+        printf("%d\n",size);
+    }
     ObjRef heap_address_for_object = (ObjRef)heap_pointer;
     if((heap_pointer+size) > heap_limit){
         garbage_collector();
@@ -773,6 +774,7 @@ void load_program_to_memory(char* program_file_path){
 }
 
 void garbage_collector(void){
+    printf("gc");
     static short isRunning = 0;
     garbage_collector_recursive_exception(isRunning);
     isRunning = 1;
@@ -863,4 +865,8 @@ ObjRef copy_object(ObjRef orig){
     memcpy(temp_address, orig, size);
     orig->size = BREAK_MY_HEART(offset);
     return (ObjRef)temp_address;
+}
+
+void shit_debug_func(unsigned int memory_on_program_counter){
+    printf("%s  \t%d\n",instructions[OPCODE(memory_on_program_counter)],IMMEDIATE(memory_on_program_counter));
 }

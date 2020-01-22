@@ -81,6 +81,7 @@ typedef struct {
  * Functions
  * */
 void garbage_collector_recursive_exception(short);
+void shit_debug_func(unsigned int); // Bitte rausnehmen
 void relocate_Objects(void);
 void relocate_big_int(void);
 void scanning(void);
