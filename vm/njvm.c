@@ -22,9 +22,9 @@ ObjRef return_value;
 int no_of_static_variables;
 int no_of_instructions;
 
+unsigned char* heap_write_memory_start;
 unsigned char* heap_start;
-unsigned char* heap_start_start;
-unsigned char* heap_limit;
+unsigned char* heap_write_memory_end;
 unsigned char* heap_max;
 unsigned char* heap_pointer;
 
@@ -36,6 +36,8 @@ unsigned int heap_size = 8192;
 unsigned int* memory;
 
 unsigned int debug_flag = 0;
+unsigned short gcpurge = 0;
+unsigned short gcstats = 0;
 
 const char *instructions[]={
         "halt",
@@ -162,9 +164,9 @@ void catch_param(int param_count, char *params[]){
         } else if (EQSTRING(params[i], "--heap")) {
             heap_size = atoi(params[++i]);
         } else if (EQSTRING(params[i], "--gcpurge")) {
-            //TODO
+            gcpurge = 1;
         } else if (EQSTRING(params[i], "--gcstats")) {
-            //TODO
+            gcstats = 1;
         } else if (EQSTRING(params[i], "--debug")) {
             debug_flag = 1;
         } else if (*params[0] == '-' && *params[1] == '-') {
@@ -187,11 +189,8 @@ void run(char* program_file_path){
     program_counter = 0;
     load_program_to_memory(program_file_path);
     unsigned int memory_on_program_counter;
-    unsigned int instruction_cont = 0;
     while(program_counter < no_of_instructions){
-        memory_on_program_counter = memory[program_counter];
-        //shit_debug_func(instruction_cont++,memory_on_program_counter); // <------ !
-        program_counter ++;
+        memory_on_program_counter = memory[program_counter++];
         opcode_instruction_pointer[OPCODE(memory_on_program_counter)](SIGN_EXTEND(IMMEDIATE(memory_on_program_counter)));
     }
 }
@@ -598,7 +597,7 @@ void putf(int immediate){
     GET_REFS(bip.op1)[immediate] = bip.op2;
 }
 
-// todo
+
 void newa(int immediate){
     bip.op1 = pop_Stack_Object();
     if(!IS_PRIM(bip.op1)){
@@ -619,7 +618,7 @@ void getfa(int immediate){
     }
 }
 
-// todo
+
 void putfa(int immediate){
     bip.op2 = pop_Stack_Object();       // object to be placed at given index
     bip.op1 = pop_Stack_Object();       // index
@@ -631,7 +630,7 @@ void putfa(int immediate){
     }
 }
 
-// todo
+
 void getsz(int immediate){
     bip.op1 = pop_Stack_Object();
     if(IS_PRIM(bip.op1)){
@@ -642,7 +641,7 @@ void getsz(int immediate){
     push_Stack_Object(bip.res);
 }
 
-// todo
+
 void pushn(int immediate){
     push_Stack_Object(NULL);
 }
@@ -659,7 +658,7 @@ void refeq(int immediate){
     push_Stack_Object(bip.res);
 }
 
-// todo
+
 void refne(int immediate){
     bip.op2 = pop_Stack_Object();
     bip.op1 = pop_Stack_Object();
@@ -725,22 +724,22 @@ void allocate_memory_for_stack(void){
 
 
 void allocate_memory_for_heap(void){
-    heap_start_start = calloc(MEMORY_SLOT_SIZE, heap_size);
-    if(heap_start_start == NULL){
+    heap_start = calloc(MEMORY_SLOT_SIZE, heap_size);
+    if(heap_start == NULL){
         exception("Heap memory allocation failed", __func__, __LINE__);
     }
-    heap_start = heap_start_start;
-    heap_pointer = heap_start_start;
-    heap_limit = &heap_start_start[heap_size*MEMORY_SLOT_SIZE / 2];
-    heap_max = &heap_start_start[heap_size*MEMORY_SLOT_SIZE-1];
+    heap_start = heap_start;
+    heap_pointer = heap_start;
+    heap_write_memory_end = &heap_start[heap_size*MEMORY_SLOT_SIZE / 2];
+    heap_max = &heap_start[heap_size*MEMORY_SLOT_SIZE-1];
 }
 
 
 ObjRef heap_alloc(unsigned int size){
     ObjRef heap_address_for_object = (ObjRef)heap_pointer;
-    if((heap_pointer+size) > heap_limit){
+    if((heap_pointer+size) > heap_write_memory_end){
         garbage_collector();
-        if((heap_pointer+size) > heap_limit){
+        if((heap_pointer+size) > heap_write_memory_end){
             exception("Out of memory exception: ", __func__, __LINE__);
         }
         heap_address_for_object = (ObjRef)heap_pointer;
@@ -780,6 +779,13 @@ void garbage_collector(void){
     relocate_Objects();
     relocate_big_int();
     scanning();
+    if(gcpurge){
+        if(heap_write_memory_end == heap_max){
+            null_unused_heap(heap_start,heap_write_memory_start);
+        } else{
+            null_unused_heap(heap_write_memory_end,heap_max);
+        }
+    }
     isRunning = 0;
 }
 
@@ -813,7 +819,7 @@ void relocate_big_int(){
 
 
 void scanning(){
-    unsigned char* scan = heap_start;
+    unsigned char* scan = heap_write_memory_start;
     ObjRef object;
     while(scan != heap_pointer){
         object = (ObjRef)scan;
@@ -828,16 +834,25 @@ void scanning(){
     }
 }
 
+void null_unused_heap(unsigned char* unused_memory_start, unsigned char* unused_memory_end){
+    unsigned char* nulling_memory = unused_memory_start;
+    while(nulling_memory < unused_memory_end){
+        *nulling_memory = NULL;
+        nulling_memory ++;
+    }
+}
+
+
 
 void flip(){
-    if(heap_limit == heap_max){
-        heap_limit = heap_start;
-        heap_start = heap_start_start;
+    if(heap_write_memory_end == heap_max){
+        heap_write_memory_end = heap_write_memory_start;
+        heap_write_memory_start = heap_start;
     } else {
-        heap_start = heap_limit;
-        heap_limit = heap_max;
+        heap_write_memory_start = heap_write_memory_end;
+        heap_write_memory_end = heap_max;
     }
-    heap_pointer = heap_start;
+    heap_pointer = heap_write_memory_start;
 }
 
 
