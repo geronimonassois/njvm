@@ -1,5 +1,5 @@
 /* file contains constant strings */
-#include "bigint/src/bigint.h"
+#include "bigint.h"
 
 #define START       "Ninja Virtual Machine started"
 #define STOP        "Ninja Virtual Machine stopped"

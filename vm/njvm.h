@@ -5,7 +5,7 @@
 #ifndef NJVM_NJVM_H
 #define NJVM_NJVM_H
 
-#include "bigint/src/support.h"
+#include "support.h"
 
 /*
  * ASM Instruction Prototypes
@@ -98,21 +98,15 @@ void flip(void);
 void garbage_collector(void);
 ObjRef relocate(ObjRef);
 ObjRef copy_object(ObjRef);
-void scan(void);
 void read_instructions_into_memory(FILE*);
 void load_program_to_memory(char*);
 void catch_param(int, char*[]);
 void run(char*);
 void debug(char*);
-void print_assambler_instructions(void);
-void print_menu(void);
-void print_memory(void);
 ObjRef pop_Stack_Object(void);
 void push_Stack_Object(ObjRef);
-int pop_Number(void);
-void push_Number(int immediate);
-
-
+int pop_Stack_Number(void);
+void push_Stack_Number(int);
 void print_heap(ObjRef);
 
 #endif //NJVM_NJVM_H

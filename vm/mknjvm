@@ -1,6 +1,9 @@
 #!/bin/bash
 
-(gcc -g -Wall -std=c89 -pedantic -o bigint.o -c ./bigint/src/bigint.c ;
+(cd ./bigint
+ gcc -g -Wall -std=c89 -pedantic -o bigint.o -c bigint.c ;
  ar -crs libbigint.a bigint.o)
 
-gcc -g -std=c99 -Wall -pedantic -Lbigint/build/lib -Ibigint -o ./njvm ./njvm.c -lbigint
+gcc -g -Wall -std=c99 -pedantic -Ibigint -Lbigint -o njvm njvm.c -lbigint
+
+#gcc -g -std=c99 -Wall -pedantic -Lbigint/build/lib -Ibigint -o ./njvm ./njvm.c -lbigint

@@ -11,8 +11,8 @@
 #include "macro.h"
 #include "constants.h"
 #include "instructions.h"
-#include "bigint/src/bigint.h"
-#include "bigint/src/support.h"
+#include "bigint.h"
+#include "support.h"
 //#include "debugger/debugger.h"
 
 #define MEMORY_SLOT_SIZE 1024
