@@ -783,8 +783,8 @@ void load_program_to_memory(char* program_file_path){
 void garbage_collector(void){
     if(gcstats){
         printf("\n------------------------------------------------------------------------------------\n");
-        printf("Es Wurden: %d Objekte seit dem letzten collect angelegt\n",heap_obj_count);
-        printf("Es wurde: %d Speicher genutzt\n",((int)heap_write_memory_end - (int)heap_pointer)*8);
+        printf("%d object were initialized since the last collection\n",heap_obj_count);
+        printf("%ld Bytes of memory are used\n",(heap_pointer - heap_write_memory_start));
     }
     static short isRunning = 0;
     garbage_collector_recursive_exception(isRunning);
@@ -801,8 +801,8 @@ void garbage_collector(void){
         }
     }
     if(gcstats){
-        printf("Es ist: %d Speicher nach dem collecten frei\n",((int)heap_write_memory_end - (int)heap_pointer)*8);
-        printf("Es leben noch: %d Objekte nach dem collecten\n", obj_alive + no_of_static_variables);
+        printf("There are: %ld Bytes free memory after collection \n",(heap_write_memory_end - heap_pointer));
+        printf("living objects after collection: %d \n", obj_alive + no_of_static_variables);
         printf("------------------------------------------------------------------------------------\n");
         heap_obj_count = 0;
         obj_alive = 0;
@@ -864,8 +864,8 @@ void scanning(){
 void null_unused_heap(unsigned char* unused_memory_start, unsigned char* unused_memory_end){
     unsigned char* nulling_memory = unused_memory_start;
     while(nulling_memory < unused_memory_end){
-        *nulling_memory = NULL;
-        nulling_memory ++;
+        *nulling_memory = 0;
+        nulling_memory++;
     }
 }
 

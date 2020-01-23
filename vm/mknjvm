@@ -4,5 +4,3 @@
  ar -crs libbigint.a bigint.o)
 
 gcc -g -std=c99 -Wall -pedantic -Lbigint/build/lib -Ibigint -o ./njvm ./njvm.c -lbigint
-
-#gcc -g -Wall -std=c99 -pedantic -o njvm njvm.c

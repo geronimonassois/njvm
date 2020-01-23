@@ -1,4 +1,4 @@
-/home/geronimonassois/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/193.5662.56/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm
+/home/geronimonassois/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/193.6015.37/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm
 -- Configuring done
 -- Generating done
 -- Build files have been written to: /home/geronimonassois/Data/Workspace/Uni/WS2019/Konzepte_systemnaher_Programmierung/njvm/vm/cmake-build-debug
