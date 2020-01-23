@@ -253,7 +253,7 @@ ObjRef pop_Stack_Object(){
 // TODO Bitte das - 1 HINTER STACK_SIZE WEG
 // MUSS GEÄNDERT WERDEN, DA GRÖßE NICHT RICHTIG GESETZT WEIRD, falscher Vergleich
 void push_Stack_Object(ObjRef objRef){
-    if(stack_pointer* sizeof(StackSlot) >= stack_size*MEMORY_SLOT_SIZE){ // todo lola
+    if(stack_pointer* sizeof(StackSlot) >= (stack_size*MEMORY_SLOT_SIZE)){ // todo lola
         exception("Stackoverflow Exception", __func__, __LINE__);
     }
     stack[stack_pointer].isObjectReference = true;
@@ -274,7 +274,7 @@ int pop_Stack_Number(){
 
 
 void push_Stack_Number(int immediate){
-    if(stack_pointer* sizeof(StackSlot) >= stack_size*MEMORY_SLOT_SIZE){ // todo lola
+    if(stack_pointer* sizeof(StackSlot) >= (stack_size*MEMORY_SLOT_SIZE)){ // todo lola
         exception("Stackoverflow Exception: ", __func__, __LINE__);
     }
     stack[stack_pointer].isObjectReference = false;
@@ -312,7 +312,7 @@ void pop_local(unsigned int memory_Adress) {
 
 
 void push_local(unsigned int memory_Adress){
-    if(stack_pointer* sizeof(StackSlot) == stack_size*MEMORY_SLOT_SIZE){ // todo lola
+    if(stack_pointer* sizeof(StackSlot) == (stack_size*MEMORY_SLOT_SIZE)){ // todo lola
         exception("Stackoverflow Exception", __func__, __LINE__);
     }
     ObjRef val = stack[memory_Adress].u.objRef;
@@ -420,7 +420,7 @@ void popl(int immediate){
 
 
 void asf(int immediate){
-    if((stack_pointer + immediate)* sizeof(StackSlot) == stack_size*MEMORY_SLOT_SIZE){ // todo lola
+    if((stack_pointer + immediate)* sizeof(StackSlot) == (stack_size*MEMORY_SLOT_SIZE)){ // todo lola
         exception("Assamble Stackframe Stackoverflow Exception", __func__, __LINE__);
     }
     push_Stack_Number((int)frame_pointer);
