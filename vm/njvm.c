@@ -34,7 +34,7 @@ unsigned char* heap_pointer;
 unsigned int stack_pointer;
 unsigned int frame_pointer;
 unsigned int program_counter;
-unsigned int stack_size = 64;
+unsigned int stack_size = 64; // ---- todo hier * 1024 / stackslot
 unsigned int heap_size = 8192;
 unsigned int* memory;
 
@@ -250,9 +250,10 @@ ObjRef pop_Stack_Object(){
     return stack[stack_pointer].u.objRef;
 }
 
-
+// TODO Bitte das - 1 HINTER STACK_SIZE WEG
+// MUSS GEÄNDERT WERDEN, DA GRÖßE NICHT RICHTIG GESETZT WEIRD, falscher Vergleich
 void push_Stack_Object(ObjRef objRef){
-    if(stack_pointer >= stack_size-1){
+    if(stack_pointer* sizeof(StackSlot) >= stack_size*MEMORY_SLOT_SIZE){ // todo lola
         exception("Stackoverflow Exception", __func__, __LINE__);
     }
     stack[stack_pointer].isObjectReference = true;
@@ -273,7 +274,7 @@ int pop_Stack_Number(){
 
 
 void push_Stack_Number(int immediate){
-    if(stack_pointer >= stack_size-1){
+    if(stack_pointer* sizeof(StackSlot) >= stack_size*MEMORY_SLOT_SIZE){ // todo lola
         exception("Stackoverflow Exception: ", __func__, __LINE__);
     }
     stack[stack_pointer].isObjectReference = false;
@@ -311,7 +312,7 @@ void pop_local(unsigned int memory_Adress) {
 
 
 void push_local(unsigned int memory_Adress){
-    if(memory_Adress == stack_size-1){
+    if(stack_pointer* sizeof(StackSlot) == stack_size*MEMORY_SLOT_SIZE){ // todo lola
         exception("Stackoverflow Exception", __func__, __LINE__);
     }
     ObjRef val = stack[memory_Adress].u.objRef;
@@ -419,7 +420,7 @@ void popl(int immediate){
 
 
 void asf(int immediate){
-    if((stack_pointer + immediate) > stack_size-1){
+    if((stack_pointer + immediate)* sizeof(StackSlot) == stack_size*MEMORY_SLOT_SIZE){ // todo lola
         exception("Assamble Stackframe Stackoverflow Exception", __func__, __LINE__);
     }
     push_Stack_Number((int)frame_pointer);
@@ -784,7 +785,7 @@ void garbage_collector(void){
     if(gcstats){
         printf("\n------------------------------------------------------------------------------------\n");
         printf("Es Wurden: %d Objekte seit dem letzten collect angelegt\n",heap_obj_count);
-        printf("Es wurde: %d Speicher genutzt\n",((int)heap_write_memory_end - (int)heap_pointer)*8);
+        printf("Es wurde: %ld Speicher genutzt\n",(heap_write_memory_end - heap_pointer));
     }
     static short isRunning = 0;
     garbage_collector_recursive_exception(isRunning);
@@ -801,7 +802,7 @@ void garbage_collector(void){
         }
     }
     if(gcstats){
-        printf("Es ist: %d Speicher nach dem collecten frei\n",((int)heap_write_memory_end - (int)heap_pointer)*8);
+        printf("Es ist: %ld Speicher nach dem collecten frei\n",(heap_write_memory_end - heap_pointer));
         printf("Es leben noch: %d Objekte nach dem collecten\n", obj_alive + no_of_static_variables);
         printf("------------------------------------------------------------------------------------\n");
         heap_obj_count = 0;
